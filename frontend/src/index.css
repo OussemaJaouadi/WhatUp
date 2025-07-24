@@ -75,9 +75,11 @@ All colors MUST be HSL for consistent theming.
     /* Dark mode with warm, cozy tones */
     --background: 25 20% 8%;
     --foreground: 45 25% 95%;
+    --foreground-dark: 45 25% 95%;
 
     --card: 25 25% 10%;
     --card-foreground: 45 25% 95%;
+    --card-dark: 25 25% 10%;
 
     --popover: 25 25% 10%;
     --popover-foreground: 45 25% 95%;
@@ -85,12 +87,14 @@ All colors MUST be HSL for consistent theming.
     --primary: 35 75% 65%;
     --primary-foreground: 25 20% 8%;
     --primary-glow: 45 85% 75%;
+    --primary-dark: 35 75% 65%;
 
     --secondary: 25 25% 18%;
     --secondary-foreground: 45 25% 88%;
 
     --muted: 25 20% 15%;
     --muted-foreground: 40 15% 65%;
+    --muted-dark: 25 20% 15%;
 
     --accent: 20 85% 65%;
     --accent-foreground: 25 20% 8%;
@@ -99,7 +103,9 @@ All colors MUST be HSL for consistent theming.
     --destructive-foreground: 45 25% 95%;
 
     --border: 25 20% 20%;
+    --border-dark: 25 20% 20%;
     --input: 25 20% 20%;
+    --input-dark: 25 20% 20%;
     --ring: 35 75% 65%;
 
     /* Dark mode gradients */
@@ -139,7 +145,8 @@ All colors MUST be HSL for consistent theming.
 @layer components {
   /* Custom component styles using design system tokens */
   .btn-cozy {
-    @apply bg-primary hover:bg-primary-glow text-primary-foreground font-medium rounded-lg px-6 py-3;
+    @apply bg-primary text-primary-foreground font-medium rounded-lg px-6 py-3;
+    @apply hover:bg-[hsl(var(--primary-glow))];
     @apply transition-all duration-300 ease-out;
     @apply shadow-[var(--shadow-warm)] hover:shadow-[var(--shadow-cozy)];
     @apply hover:scale-105 active:scale-95;

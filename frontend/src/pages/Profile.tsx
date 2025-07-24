@@ -167,9 +167,9 @@ const Profile = () => {
   const activeProfileImage = profileImages.find(img => img.is_active);
 
   return (
-    <div className="min-h-screen gradient-cozy">
+    <div className="min-h-screen gradient-cozy bg-background text-foreground dark:bg-background-dark dark:text-foreground-dark">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-md border-b border-border">
+      <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-md border-b border-border dark:bg-card-dark/80 dark:border-border-dark">
         <div className="max-w-7xl mx-auto p-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-4">
@@ -205,7 +205,7 @@ const Profile = () => {
         <div className="grid lg:grid-cols-4 gap-6">
           {/* Profile Summary Card */}
           <div className="lg:col-span-1">
-            <Card className="card-cozy text-center sticky top-24">
+          <Card className="card-cozy text-center sticky top-24 bg-card dark:bg-card-dark text-card-foreground dark:text-card-foreground-dark">
               <div className="relative mx-auto w-24 h-24 mb-4">
                 <Avatar className="w-24 h-24 border-4 border-accent/20">
                   <AvatarImage src={activeProfileImage ? `${import.meta.env.VITE_API_BASE_URL}user/profile-images/${activeProfileImage.id}/data` : "/placeholder.svg"} alt={currentUser.username} />

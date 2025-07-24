@@ -1,6 +1,7 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
 import { jwtDecode } from 'jwt-decode';
+import { DecodedToken } from '@/types/auth';
 
 interface ProtectedRouteProps {
   allowedRoles?: string[];
@@ -14,7 +15,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
   }
 
   try {
-    const decodedToken: any = jwtDecode(token);
+    const decodedToken = jwtDecode<DecodedToken>(token);
     const userRole = decodedToken.role; // Assuming your JWT has a 'role' claim
 
     if (allowedRoles && !allowedRoles.includes(userRole)) {

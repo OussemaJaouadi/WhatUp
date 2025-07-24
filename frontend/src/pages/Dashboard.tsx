@@ -109,9 +109,9 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-screen gradient-cozy">
+    <div className="min-h-screen gradient-cozy bg-background text-foreground dark:bg-background-dark dark:text-foreground-dark">
       {/* Header */}
-      <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-md border-b border-border">
+      <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-md border-b border-border dark:bg-card-dark/80 dark:border-border-dark">
         <div className="max-w-7xl mx-auto p-4">
           <div className="flex justify-between items-center">
             <div className="flex items-center space-x-4">
@@ -159,19 +159,14 @@ const Dashboard = () => {
         <div className="grid lg:grid-cols-4 gap-6 h-[calc(100vh-120px)]">
           {/* Sidebar - Chats List */}
           <div className="lg:col-span-1 space-y-4">
-            <Card className="card-cozy">
-              <div className="flex items-center justify-between mb-4">
-                <h2 className="font-crimson font-semibold text-lg">Chats</h2>
-                <Button size="sm" variant="ghost">
-                  <Users className="h-4 w-4" />
-                </Button>
-              </div>
-              
+            <Card className="card-cozy bg-card dark:bg-card-dark text-card-foreground dark:text-card-foreground-dark">
+              <Button size="sm" variant="ghost">
+                <Users className="h-4 w-4" />
+              </Button>
               <div className="relative mb-4">
                 <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
                 <Input placeholder="Search chats..." className="pl-10" />
               </div>
-              
               <div className="space-y-2 max-h-[500px] overflow-y-auto">
                 {chats.map((chat) => (
                   <div
@@ -190,7 +185,6 @@ const Dashboard = () => {
                           {chat.participants.length > 1 ? '👥' : chat.name.slice(0, 2).toUpperCase()}
                         </AvatarFallback>
                       </Avatar>
-                      
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center justify-between">
                           <span className="font-medium truncate">{chat.name}</span>
@@ -208,9 +202,8 @@ const Dashboard = () => {
                 ))}
               </div>
             </Card>
-
             {/* User Profile Card */}
-            <Card className="card-cozy">
+            <Card className="card-cozy bg-card dark:bg-card-dark text-card-foreground dark:text-card-foreground-dark">
               <div className="flex items-center space-x-3">
                 <Avatar className="h-12 w-12">
                   <AvatarImage src={currentUser.profileImage} />
@@ -234,7 +227,7 @@ const Dashboard = () => {
           {/* Main Chat Area */}
           <div className="lg:col-span-3">
             {selectedChat ? (
-              <Card className="card-cozy h-full flex flex-col">
+              <Card className="card-cozy h-full flex flex-col bg-card dark:bg-card-dark text-card-foreground dark:text-card-foreground-dark">
                 {/* Chat Header */}
                 <div className="flex items-center justify-between p-4 border-b border-border">
                   <div className="flex items-center space-x-3">
@@ -308,7 +301,7 @@ const Dashboard = () => {
                 </div>
               </Card>
             ) : (
-              <Card className="card-cozy h-full flex items-center justify-center">
+              <Card className="card-cozy h-full flex items-center justify-center bg-card dark:bg-card-dark text-card-foreground dark:text-card-foreground-dark">
                 <div className="text-center space-y-4">
                   <Coffee className="h-16 w-16 text-muted-foreground mx-auto" />
                   <div>
