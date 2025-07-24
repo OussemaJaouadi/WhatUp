@@ -79,9 +79,19 @@ export default {
       spacing: {
         '18': '4.5rem',
         '88': '22rem',
+        '100': '25rem',
+        '128': '32rem',
       },
       maxWidth: {
         '8xl': '88rem',
+        '9xl': '96rem',
+      },
+      backdropBlur: {
+        xs: '2px',
+      },
+      boxShadow: {
+        'cozy': '0 4px 12px rgb(54 29 50 / 0.15)',
+        'cozy-lg': '0 8px 25px rgb(54 29 50 / 0.20)',
       },
     },
   },

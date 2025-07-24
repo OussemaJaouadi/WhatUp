@@ -1,185 +1,175 @@
 
-import { useState, useEffect, useRef } from "react";
-import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
-import { MessageCircle, Users, Shield, ArrowRight, CheckCircle, Star } from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import Navbar from "@/components/Navbar";
 
-const Index = () => {
-  const navigate = useNavigate();
+import { Link } from "react-router-dom";
+import { MessageCircle, Users, Shield, Zap, Heart, Coffee } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { useEffect, useRef } from "react";
+import anime from "animejs";
+
+export default function Index() {
+  const heroRef = useRef<HTMLDivElement>(null);
+  const featuresRef = useRef<HTMLDivElement>(null);
+  const ctaRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    // Cozy entrance animations
+    const timeline = anime.timeline({
+      easing: 'easeOutExpo',
+    });
+
+    timeline
+      .add({
+        targets: heroRef.current?.children,
+        translateY: [60, 0],
+        opacity: [0, 1],
+        delay: anime.stagger(150),
+        duration: 800,
+      })
+      .add({
+        targets: featuresRef.current?.children,
+        translateY: [40, 0],
+        opacity: [0, 1],
+        delay: anime.stagger(100),
+        duration: 600,
+      }, '-=400')
+      .add({
+        targets: ctaRef.current?.children,
+        scale: [0.8, 1],
+        opacity: [0, 1],
+        delay: anime.stagger(100),
+        duration: 600,
+      }, '-=300');
+  }, []);
 
   return (
-    <div className="min-h-screen bg-background">
-      <Navbar />
-
+    <div className="min-h-screen bg-gradient-cozy">
       {/* Hero Section */}
-      <section className="section-padding border-b border-border">
-        <div className="container-modern">
-          <div className="grid lg:grid-cols-2 gap-12 items-center">
-            <div className="space-y-8">
-              <div className="space-y-6">
-                <div className="inline-flex items-center rounded-full border border-border px-3 py-1 text-sm bg-muted/50">
-                  <Star className="h-4 w-4 mr-2 text-primary" />
-                  Professional messaging platform
-                </div>
-                <h1 className="text-4xl sm:text-5xl lg:text-6xl font-outfit font-bold tracking-tight text-balance">
-                  Connect with your team{" "}
-                  <span className="text-primary">professionally</span>
-                </h1>
-                <p className="text-lg sm:text-xl text-muted-foreground text-balance max-w-2xl">
-                  A modern, secure messaging platform designed for teams who value 
-                  clear communication and professional collaboration.
-                </p>
-              </div>
-              
-              <div className="flex flex-col sm:flex-row gap-4">
-                <Button 
-                  onClick={() => navigate("/register")}
-                  size="lg"
-                  className="btn-primary text-base px-8 py-3 h-12"
-                >
-                  Get Started
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-                <Button 
-                  onClick={() => navigate("/login")}
-                  variant="outline" 
-                  size="lg"
-                  className="text-base px-8 py-3 h-12"
-                >
-                  Sign In
-                </Button>
-              </div>
-
-              <div className="flex items-center space-x-6 pt-4">
-                <div className="flex items-center space-x-2">
-                  <CheckCircle className="h-5 w-5 text-primary" />
-                  <span className="text-sm text-muted-foreground">Free to start</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <CheckCircle className="h-5 w-5 text-primary" />
-                  <span className="text-sm text-muted-foreground">Secure messaging</span>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <CheckCircle className="h-5 w-5 text-primary" />
-                  <span className="text-sm text-muted-foreground">Team collaboration</span>
-                </div>
-              </div>
+      <section className="section-cozy pt-32">
+        <div className="container-cozy text-center" ref={heroRef}>
+          <div className="flex justify-center mb-8">
+            <div className="p-4 bg-primary/10 rounded-3xl shadow-cozy">
+              <MessageCircle className="h-16 w-16 text-primary" />
             </div>
-
-            <div className="relative lg:pl-8">
-              <div className="aspect-[4/3] bg-gradient-to-br from-primary/10 to-primary/5 rounded-lg border border-border p-8 shadow-lg">
-                <div className="h-full bg-card rounded border border-border shadow-sm p-6 flex flex-col justify-center items-center">
-                  <MessageCircle className="h-16 w-16 text-primary mb-4" />
-                  <h3 className="text-xl font-semibold mb-2">WhatUp</h3>
-                  <p className="text-muted-foreground text-center">
-                    Professional messaging made simple
-                  </p>
-                </div>
-              </div>
-            </div>
+          </div>
+          
+          <h1 className="text-5xl md:text-7xl font-outfit font-bold text-foreground mb-6 text-balance">
+            Welcome to{" "}
+            <span className="text-primary glow-warm">WhatUp</span>
+          </h1>
+          
+          <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto text-balance leading-relaxed">
+            Where conversations feel like home. Connect with friends in our cozy digital space 
+            that brings the warmth of your favorite coffee shop to every chat.
+          </p>
+          
+          <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
+            <Link to="/register">
+              <Button size="lg" className="btn-primary text-lg px-8 py-4 shadow-cozy-lg group">
+                <Heart className="mr-2 h-5 w-5 group-hover:text-destructive transition-colors" />
+                Start Your Story
+              </Button>
+            </Link>
+            <Link to="/login">
+              <Button variant="outline" size="lg" className="btn-outline text-lg px-8 py-4">
+                <Coffee className="mr-2 h-5 w-5" />
+                Welcome Back
+              </Button>
+            </Link>
           </div>
         </div>
       </section>
 
       {/* Features Section */}
-      <section className="section-padding bg-muted/30">
-        <div className="container-modern">
+      <section className="section-cozy bg-card/30">
+        <div className="container-cozy">
           <div className="text-center mb-16">
-            <h2 className="text-3xl sm:text-4xl font-outfit font-bold mb-4">
-              Built for modern teams
+            <h2 className="text-4xl md:text-5xl font-outfit font-bold text-foreground mb-4">
+              Your Cozy Corner of the Internet
             </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto text-balance">
-              Everything you need to communicate effectively with your team, 
-              without the clutter and distractions.
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Built for meaningful connections, just like the gang at MacLaren's Pub
             </p>
           </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            <Card className="card-modern group hover:shadow-lg transition-all duration-200">
-              <div className="p-6">
-                <MessageCircle className="h-12 w-12 text-primary mb-4 group-hover:scale-110 transition-transform duration-200" />
-                <h3 className="text-xl font-semibold mb-3">Instant Messaging</h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  Fast, reliable messaging with real-time delivery and 
-                  read receipts for seamless communication.
-                </p>
+          
+          <div className="grid md:grid-cols-3 gap-8" ref={featuresRef}>
+            <div className="card-cozy text-center group hover:bg-primary/5 transition-all duration-300">
+              <div className="p-3 bg-primary/10 rounded-2xl w-fit mx-auto mb-6 group-hover:bg-primary/20 transition-colors">
+                <Users className="h-8 w-8 text-primary" />
               </div>
-            </Card>
+              <h3 className="text-2xl font-outfit font-semibold mb-4 text-foreground">
+                Your Circle
+              </h3>
+              <p className="text-muted-foreground leading-relaxed">
+                Create intimate group chats where every conversation feels like 
+                you're all sitting around the same table sharing stories.
+              </p>
+            </div>
 
-            <Card className="card-modern group hover:shadow-lg transition-all duration-200">
-              <div className="p-6">
-                <Users className="h-12 w-12 text-primary mb-4 group-hover:scale-110 transition-transform duration-200" />
-                <h3 className="text-xl font-semibold mb-3">Team Collaboration</h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  Create teams, organize conversations, and keep everyone 
-                  aligned with powerful collaboration tools.
-                </p>
+            <div className="card-cozy text-center group hover:bg-secondary/5 transition-all duration-300">
+              <div className="p-3 bg-secondary/10 rounded-2xl w-fit mx-auto mb-6 group-hover:bg-secondary/20 transition-colors">
+                <Shield className="h-8 w-8 text-secondary" />
               </div>
-            </Card>
+              <h3 className="text-2xl font-outfit font-semibold mb-4 text-foreground">
+                Safe Space
+              </h3>
+              <p className="text-muted-foreground leading-relaxed">
+                Your conversations are protected with love and care. 
+                What happens in WhatUp, stays in WhatUp.
+              </p>
+            </div>
 
-            <Card className="card-modern group hover:shadow-lg transition-all duration-200">
-              <div className="p-6">
-                <Shield className="h-12 w-12 text-primary mb-4 group-hover:scale-110 transition-transform duration-200" />
-                <h3 className="text-xl font-semibold mb-3">Secure & Private</h3>
-                <p className="text-muted-foreground leading-relaxed">
-                  Enterprise-grade security with end-to-end encryption 
-                  to keep your conversations private and secure.
-                </p>
+            <div className="card-cozy text-center group hover:bg-accent/10 transition-all duration-300">
+              <div className="p-3 bg-accent/20 rounded-2xl w-fit mx-auto mb-6 group-hover:bg-accent/30 transition-colors">
+                <Zap className="h-8 w-8 text-foreground" />
               </div>
-            </Card>
+              <h3 className="text-2xl font-outfit font-semibold mb-4 text-foreground">
+                Instant Magic
+              </h3>
+              <p className="text-muted-foreground leading-relaxed">
+                Real-time conversations that flow naturally, 
+                like the perfect evening with your best friends.
+              </p>
+            </div>
           </div>
         </div>
       </section>
 
       {/* CTA Section */}
-      <section className="section-padding gradient-primary text-white">
-        <div className="container-modern text-center">
-          <div className="max-w-3xl mx-auto">
-            <h2 className="text-3xl sm:text-4xl font-outfit font-bold mb-6">
-              Ready to transform your team communication?
-            </h2>
-            <p className="text-lg mb-8 text-primary-foreground/80 text-balance">
-              Join thousands of teams who trust WhatUp for their daily communication needs.
-            </p>
+      <section className="section-cozy bg-gradient-warm text-primary-foreground">
+        <div className="container-cozy text-center" ref={ctaRef}>
+          <h2 className="text-4xl md:text-5xl font-outfit font-bold mb-6">
+            Ready to Find Your People?
+          </h2>
+          <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
+            Join WhatUp today and start building the kind of friendships 
+            that make every day feel like an adventure.
+          </p>
+          <Link to="/register">
             <Button 
-              onClick={() => navigate("/register")}
-              size="lg"
+              size="lg" 
               variant="secondary"
-              className="text-base px-8 py-3 h-12 bg-white text-primary hover:bg-white/90"
+              className="btn-secondary text-lg px-12 py-4 shadow-cozy-lg hover:shadow-xl transition-all duration-300 group"
             >
-              Start your free account
-              <ArrowRight className="ml-2 h-4 w-4" />
+              <MessageCircle className="mr-2 h-5 w-5 group-hover:rotate-12 transition-transform" />
+              Begin Your Journey
             </Button>
-          </div>
+          </Link>
         </div>
       </section>
 
       {/* Footer */}
-      <footer className="py-12 border-t border-border bg-muted/20">
-        <div className="container-modern">
-          <div className="flex flex-col sm:flex-row items-center justify-between">
-            <div className="flex items-center space-x-2 mb-4 sm:mb-0">
-              <MessageCircle className="h-5 w-5 text-primary" />
-              <span className="font-outfit font-semibold">WhatUp</span>
-            </div>
-            <p className="text-sm text-muted-foreground text-center sm:text-right">
-              Made with care for professional teams. By{" "}
-              <a 
-                href="https://oussemajaouadi.site/" 
-                className="text-primary hover:underline"
-                target="_blank"
-                rel="noopener noreferrer"
-              >
-                Oussema Jaouadi
-              </a>
-            </p>
+      <footer className="py-12 bg-card/50 border-t border-border/50">
+        <div className="container-cozy text-center">
+          <div className="flex items-center justify-center space-x-2 mb-4">
+            <MessageCircle className="h-6 w-6 text-primary" />
+            <span className="font-outfit font-semibold text-xl">WhatUp</span>
           </div>
+          <p className="text-muted-foreground">
+            Making conversations legendary, one chat at a time. 🍻
+          </p>
         </div>
       </footer>
     </div>
   );
-};
+}
 
-export default Index;

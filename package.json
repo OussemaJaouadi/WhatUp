@@ -1,0 +1,16 @@
+{
+  "name": "workspace",
+  "version": "1.0.0",
+  "description": "This repository contains the backend services for the WhatUp application.",
+  "main": "index.js",
+  "dependencies": {
+    "@types/animejs": "^3.1.13",
+    "animejs": "^4.1.1"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC"
+}

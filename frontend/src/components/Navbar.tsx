@@ -29,8 +29,8 @@ export default function Navbar() {
   const isActivePath = (path: string) => location.pathname === path;
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="container-modern">
+    <nav className="sticky top-0 z-50 w-full border-b border-border/50 bg-background/90 backdrop-blur-sm supports-[backdrop-filter]:bg-background/80 shadow-sm">
+      <div className="container-cozy">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
           <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
@@ -46,7 +46,7 @@ export default function Navbar() {
                   <Button 
                     variant={isActivePath('/login') ? 'default' : 'ghost'} 
                     size="sm"
-                    className="font-medium"
+                    className="font-medium btn-ghost"
                   >
                     Sign In
                   </Button>
@@ -55,7 +55,7 @@ export default function Navbar() {
                   <Button 
                     variant={isActivePath('/register') ? 'default' : 'outline'} 
                     size="sm"
-                    className="font-medium ml-2"
+                    className="font-medium ml-2 btn-primary"
                   >
                     Get Started
                   </Button>
@@ -67,7 +67,7 @@ export default function Navbar() {
                   <Button 
                     variant={isActivePath('/dashboard') ? 'default' : 'ghost'} 
                     size="sm"
-                    className="font-medium"
+                    className="font-medium btn-ghost"
                   >
                     Dashboard
                   </Button>
@@ -76,7 +76,7 @@ export default function Navbar() {
                   <Button 
                     variant={isActivePath('/profile') ? 'default' : 'ghost'} 
                     size="sm"
-                    className="font-medium"
+                    className="font-medium btn-ghost"
                   >
                     <User className="h-4 w-4 mr-1.5" />
                     Profile
@@ -87,7 +87,7 @@ export default function Navbar() {
                     <Button 
                       variant={isActivePath('/admin') ? 'default' : 'ghost'} 
                       size="sm"
-                      className="font-medium"
+                      className="font-medium btn-ghost"
                     >
                       <Settings className="h-4 w-4 mr-1.5" />
                       Admin
@@ -98,25 +98,21 @@ export default function Navbar() {
                   onClick={handleLogout} 
                   variant="ghost" 
                   size="sm"
-                  className="font-medium text-muted-foreground hover:text-foreground ml-2"
+                  className="font-medium text-muted-foreground hover:text-foreground ml-2 btn-ghost"
                 >
                   <LogOut className="h-4 w-4 mr-1.5" />
                   Sign Out
                 </Button>
               </>
             )}
-            <div className="ml-4 pl-4 border-l border-border">
-              <ThemeToggle />
-            </div>
           </div>
 
           {/* Mobile menu button */}
-          <div className="md:hidden flex items-center space-x-2">
-            <ThemeToggle />
+          <div className="md:hidden">
             <Button
               variant="ghost"
               size="sm"
-              className="h-9 w-9 p-0"
+              className="h-9 w-9 p-0 btn-ghost"
               onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
               aria-label="Toggle menu"
             >
