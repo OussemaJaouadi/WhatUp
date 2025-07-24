@@ -6,8 +6,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { loginUser } from "@/services/auth";
-import anime from "animejs";
+import { authService } from "@/services/auth";
+import * as anime from "animejs";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -49,7 +49,7 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      const response = await loginUser({ email, password });
+      const response = await authService.login(email, password);
       
       if (response.token) {
         localStorage.setItem("jwt_token", response.token);

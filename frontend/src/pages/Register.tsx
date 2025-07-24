@@ -7,8 +7,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
-import { registerUser } from "@/services/auth";
-import anime from "animejs";
+import { authService } from "@/services/auth";
+import * as anime from "animejs";
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -80,7 +80,7 @@ export default function Register() {
     setIsLoading(true);
 
     try {
-      const response = await registerUser({
+      const response = await authService.register({
         first_name: formData.first_name,
         last_name: formData.last_name,
         email: formData.email,
