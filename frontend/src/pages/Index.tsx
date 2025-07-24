@@ -1,3 +1,4 @@
+
 import { Link } from "react-router-dom";
 import { MessageCircle, Users, Shield, Zap, Heart, Coffee } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -14,36 +15,33 @@ export default function Index() {
     if (!heroRef.current) return;
     
     scope.current = createScope({ root: document.body }).add(() => {
-      // Hero section animation
       if (heroRef.current?.children) {
         animate(Array.from(heroRef.current.children), {
-          translateY: [60, 0],
-          opacity: [0, 1],
-          delay: (el, i) => i * 150,
-          duration: 800,
-          ease: 'out(3)'
-        });
-      }
-
-      // Features section animation
-      if (featuresRef.current?.children) {
-        animate(Array.from(featuresRef.current.children), {
           translateY: [40, 0],
           opacity: [0, 1],
-          delay: (el, i) => i * 100 + 400,
+          delay: (el, i) => i * 120,
           duration: 600,
-          ease: 'out(3)'
+          ease: 'out(2)'
         });
       }
 
-      // CTA section animation
+      if (featuresRef.current?.children) {
+        animate(Array.from(featuresRef.current.children), {
+          translateY: [30, 0],
+          opacity: [0, 1],
+          delay: (el, i) => i * 80 + 300,
+          duration: 500,
+          ease: 'out(2)'
+        });
+      }
+
       if (ctaRef.current?.children) {
         animate(Array.from(ctaRef.current.children), {
-          scale: [0.8, 1],
+          scale: [0.95, 1],
           opacity: [0, 1],
-          delay: (el, i) => i * 100 + 700,
-          duration: 600,
-          ease: 'out(3)'
+          delay: (el, i) => i * 80 + 600,
+          duration: 500,
+          ease: 'out(2)'
         });
       }
     });
@@ -52,37 +50,37 @@ export default function Index() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gradient-cozy">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900">
       {/* Hero Section */}
-      <section className="section-cozy pt-32">
-        <div className="container-cozy text-center" ref={heroRef}>
+      <section className="pt-20 pb-16 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-4xl mx-auto text-center" ref={heroRef}>
           <div className="flex justify-center mb-8">
-            <div className="p-4 bg-primary/10 rounded-3xl shadow-cozy">
-              <MessageCircle className="h-16 w-16 text-primary" />
+            <div className="p-4 bg-amber-100 dark:bg-amber-900/30 rounded-full shadow-lg">
+              <MessageCircle className="h-16 w-16 text-amber-600 dark:text-amber-400" />
             </div>
           </div>
           
-          <h1 className="text-5xl md:text-7xl font-outfit font-bold text-foreground mb-6 text-balance">
+          <h1 className="text-5xl md:text-6xl font-bold text-slate-900 dark:text-slate-100 mb-6">
             Welcome to{" "}
-            <span className="text-primary glow-warm">WhatUp</span>
+            <span className="text-amber-600 dark:text-amber-400">WhatUp</span>
           </h1>
           
-          <p className="text-xl md:text-2xl text-muted-foreground mb-8 max-w-3xl mx-auto text-balance leading-relaxed">
-            Where conversations feel like home. Connect with friends in our cozy digital space 
-            that brings the warmth of your favorite coffee shop to every chat.
+          <p className="text-xl md:text-2xl text-slate-600 dark:text-slate-400 mb-8 max-w-3xl mx-auto leading-relaxed">
+            Where conversations become legendary. Connect with your gang in our professional platform 
+            that brings the best of modern communication to every interaction.
           </p>
           
           <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
             <Link to="/register">
-              <Button size="lg" className="btn-primary text-lg px-8 py-4 shadow-cozy-lg group">
-                <Heart className="mr-2 h-5 w-5 group-hover:text-destructive transition-colors" />
-                Start Your Story
+              <Button size="lg" className="bg-amber-600 hover:bg-amber-700 text-white text-lg px-8 py-4 shadow-lg group">
+                <Heart className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
+                Start Your Journey
               </Button>
             </Link>
             <Link to="/login">
-              <Button variant="outline" size="lg" className="btn-outline text-lg px-8 py-4">
+              <Button variant="outline" size="lg" className="text-lg px-8 py-4 border-slate-300 dark:border-slate-600">
                 <Coffee className="mr-2 h-5 w-5" />
-                Welcome Back
+                Sign In
               </Button>
             </Link>
           </div>
@@ -90,54 +88,51 @@ export default function Index() {
       </section>
 
       {/* Features Section */}
-      <section className="section-cozy bg-card/30">
-        <div className="container-cozy">
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-white/50 dark:bg-slate-800/50">
+        <div className="max-w-6xl mx-auto">
           <div className="text-center mb-16">
-            <h2 className="text-4xl md:text-5xl font-outfit font-bold text-foreground mb-4">
-              Your Cozy Corner of the Internet
+            <h2 className="text-3xl md:text-4xl font-bold text-slate-900 dark:text-slate-100 mb-4">
+              Built for Legendary Connections
             </h2>
-            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
-              Built for meaningful connections, just like the gang at MacLaren's Pub
+            <p className="text-lg text-slate-600 dark:text-slate-400 max-w-2xl mx-auto">
+              Every feature designed to make your conversations more meaningful and your connections stronger.
             </p>
           </div>
           
-          <div className="grid md:grid-cols-3 gap-8" ref={featuresRef}>
-            <div className="card-cozy text-center group hover:bg-primary/5 transition-all duration-300">
-              <div className="p-3 bg-primary/10 rounded-2xl w-fit mx-auto mb-6 group-hover:bg-primary/20 transition-colors">
-                <Users className="h-8 w-8 text-primary" />
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8" ref={featuresRef}>
+            <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-slate-200 dark:border-slate-700">
+              <div className="p-3 bg-blue-100 dark:bg-blue-900/30 rounded-lg w-fit mb-4">
+                <Users className="h-6 w-6 text-blue-600 dark:text-blue-400" />
               </div>
-              <h3 className="text-2xl font-outfit font-semibold mb-4 text-foreground">
-                Your Circle
+              <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-2">
+                Smart Connections
               </h3>
-              <p className="text-muted-foreground leading-relaxed">
-                Create intimate group chats where every conversation feels like 
-                you're all sitting around the same table sharing stories.
+              <p className="text-slate-600 dark:text-slate-400">
+                Find and connect with people who share your interests and values, just like finding your perfect wingman.
               </p>
             </div>
-
-            <div className="card-cozy text-center group hover:bg-secondary/5 transition-all duration-300">
-              <div className="p-3 bg-secondary/10 rounded-2xl w-fit mx-auto mb-6 group-hover:bg-secondary/20 transition-colors">
-                <Shield className="h-8 w-8 text-secondary" />
+            
+            <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-slate-200 dark:border-slate-700">
+              <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-lg w-fit mb-4">
+                <Shield className="h-6 w-6 text-green-600 dark:text-green-400" />
               </div>
-              <h3 className="text-2xl font-outfit font-semibold mb-4 text-foreground">
-                Safe Space
+              <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-2">
+                Secure & Private
               </h3>
-              <p className="text-muted-foreground leading-relaxed">
-                Your conversations are protected with love and care. 
-                What happens in WhatUp, stays in WhatUp.
+              <p className="text-slate-600 dark:text-slate-400">
+                Your conversations stay between you and your friends. Privacy isn't just a feature, it's our promise.
               </p>
             </div>
-
-            <div className="card-cozy text-center group hover:bg-accent/10 transition-all duration-300">
-              <div className="p-3 bg-accent/20 rounded-2xl w-fit mx-auto mb-6 group-hover:bg-accent/30 transition-colors">
-                <Zap className="h-8 w-8 text-foreground" />
+            
+            <div className="bg-white dark:bg-slate-800 rounded-xl p-6 shadow-lg border border-slate-200 dark:border-slate-700">
+              <div className="p-3 bg-purple-100 dark:bg-purple-900/30 rounded-lg w-fit mb-4">
+                <Zap className="h-6 w-6 text-purple-600 dark:text-purple-400" />
               </div>
-              <h3 className="text-2xl font-outfit font-semibold mb-4 text-foreground">
-                Instant Magic
+              <h3 className="text-xl font-semibold text-slate-900 dark:text-slate-100 mb-2">
+                Lightning Fast
               </h3>
-              <p className="text-muted-foreground leading-relaxed">
-                Real-time conversations that flow naturally, 
-                like the perfect evening with your best friends.
+              <p className="text-slate-600 dark:text-slate-400">
+                Real-time messaging that keeps up with your thoughts. No delays, no lag, just pure conversation flow.
               </p>
             </div>
           </div>
@@ -145,20 +140,20 @@ export default function Index() {
       </section>
 
       {/* CTA Section */}
-      <section className="section-cozy bg-gradient-warm text-primary-foreground">
-        <div className="container-cozy text-center" ref={ctaRef}>
-          <h2 className="text-4xl md:text-5xl font-outfit font-bold mb-6">
-            Ready to Find Your People?
+      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-amber-600 to-orange-600 text-white">
+        <div className="max-w-4xl mx-auto text-center" ref={ctaRef}>
+          <h2 className="text-4xl md:text-5xl font-bold mb-6">
+            Ready to Write Your Story?
           </h2>
           <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-            Join WhatUp today and start building the kind of friendships 
-            that make every day feel like an adventure.
+            Join WhatUp today and start building the kind of connections 
+            that make every conversation legendary.
           </p>
           <Link to="/register">
             <Button 
               size="lg" 
               variant="secondary"
-              className="btn-secondary text-lg px-12 py-4 shadow-cozy-lg hover:shadow-xl transition-all duration-300 group"
+              className="bg-white text-amber-600 hover:bg-slate-50 text-lg px-12 py-4 shadow-lg hover:shadow-xl transition-all duration-300 group"
             >
               <MessageCircle className="mr-2 h-5 w-5 group-hover:rotate-12 transition-transform" />
               Begin Your Journey
@@ -168,13 +163,13 @@ export default function Index() {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 bg-card/50 border-t border-border/50">
-        <div className="container-cozy text-center">
+      <footer className="py-12 bg-slate-900 dark:bg-slate-950 border-t border-slate-800">
+        <div className="max-w-4xl mx-auto text-center px-4">
           <div className="flex items-center justify-center space-x-2 mb-4">
-            <MessageCircle className="h-6 w-6 text-primary" />
-            <span className="font-outfit font-semibold text-xl">WhatUp</span>
+            <MessageCircle className="h-6 w-6 text-amber-400" />
+            <span className="font-bold text-xl text-white">WhatUp</span>
           </div>
-          <p className="text-muted-foreground">
+          <p className="text-slate-400">
             Making conversations legendary, one chat at a time. 🍻
           </p>
         </div>
@@ -182,4 +177,3 @@ export default function Index() {
     </div>
   );
 }
-

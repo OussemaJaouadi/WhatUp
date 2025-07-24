@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, MessageCircle, Heart, Users } from "lucide-react";
+import { Eye, EyeOff, MessageCircle, Users } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -12,8 +12,7 @@ import { animate, createScope } from "animejs";
 
 export default function Register() {
   const [formData, setFormData] = useState({
-    first_name: "",
-    last_name: "",
+    username: "",
     email: "",
     password: "",
     confirmPassword: ""
@@ -24,29 +23,26 @@ export default function Register() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const cardRef = useRef<HTMLDivElement>(null);
-  const formRef = useRef<HTMLFormElement>(null);
   const scope = useRef<any>(null);
 
   useEffect(() => {
     if (!cardRef.current) return;
 
     scope.current = createScope({ root: cardRef.current }).add(() => {
-      // Cozy entrance animation for card
       animate('.register-card', {
-        translateY: [50, 0],
+        translateY: [40, 0],
         opacity: [0, 1],
-        scale: [0.95, 1],
-        duration: 800,
-        ease: 'out(3)'
+        scale: [0.98, 1],
+        duration: 600,
+        ease: 'out(2)'
       });
 
-      // Staggered animation for form elements
       animate('.form-field', {
-        translateY: [30, 0],
+        translateY: [20, 0],
         opacity: [0, 1],
-        delay: (el, i) => i * 80 + 300,
-        duration: 600,
-        ease: 'out(3)'
+        delay: (el, i) => i * 60 + 200,
+        duration: 500,
+        ease: 'out(2)'
       });
     });
 
@@ -65,15 +61,15 @@ export default function Register() {
     
     if (formData.password !== formData.confirmPassword) {
       animate('.register-card', {
-        translateX: [-8, 8, -6, 6, -4, 4, -2, 2, 0],
+        translateX: [-6, 6, -4, 4, -2, 2, 0],
         duration: 400,
-        ease: 'out(3)'
+        ease: 'out(2)'
       });
       
       toast({
         variant: "destructive",
-        title: "Password Mismatch 😅",
-        description: "Make sure both passwords match!",
+        title: "Password Mismatch",
+        description: "Please ensure both passwords match.",
       });
       return;
     }
@@ -81,97 +77,111 @@ export default function Register() {
     setIsLoading(true);
 
     try {
-      const response = await authService.register({
-        first_name: formData.first_name,
-        last_name: formData.last_name,
+      await authService.register({
+        username: formData.username,
         email: formData.email,
         password: formData.password
       });
 
-      // Success animation
       animate('.register-card', {
-        scale: [1, 1.05, 1],
-        duration: 600,
-        ease: 'outElastic(1, .8)',
+        scale: [1, 1.02, 1],
+        duration: 400,
+        ease: 'out(2)',
         complete: () => {
           toast({
-            title: "Welcome to the gang! 🎉",
-            description: "Your story begins now. Check your email to get started!",
+            title: "Account Created! 🎉",
+            description: "Welcome to the gang! Please check your email to verify your account.",
           });
           navigate("/login");
         }
       });
     } catch (error: any) {
-      // Error shake animation
       animate('.register-card', {
-        translateX: [-10, 10, -8, 8, -6, 6, -4, 4, -2, 2, 0],
+        translateX: [-8, 8, -6, 6, -4, 4, -2, 2, 0],
         duration: 500,
-        ease: 'out(3)'
+        ease: 'out(2)'
       });
 
       toast({
         variant: "destructive",
-        title: "Oops! 😅",
-        description: error.response?.data?.detail || "Something went wrong. Try again?",
+        title: "Registration Failed",
+        description: error.response?.data?.detail || "Please try again with different credentials.",
       });
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleGoogleSignup = () => {
+    toast({
+      title: "Coming Soon! 🚧",
+      description: "Google sign-up will be available soon. Stay legendary!",
+    });
+  };
+
   return (
-    <div className="min-h-screen bg-gradient-cozy flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <Card ref={cardRef} className="register-card card-cozy shadow-cozy-lg border-0 bg-card/95 backdrop-blur-sm">
-          <CardHeader className="space-y-4 text-center pb-8">
-            <div className="mx-auto p-3 bg-primary/10 rounded-2xl w-fit">
-              <Heart className="h-8 w-8 text-primary" />
+        <Card ref={cardRef} className="register-card bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm border border-slate-200 dark:border-slate-700 shadow-xl">
+          <CardHeader className="space-y-4 text-center pb-6">
+            <div className="mx-auto p-3 bg-blue-100 dark:bg-blue-900/30 rounded-full w-fit">
+              <Users className="h-7 w-7 text-blue-600 dark:text-blue-400" />
             </div>
             <div>
-              <CardTitle className="text-3xl font-outfit font-bold text-foreground">
-                Join the Story
+              <CardTitle className="text-2xl font-bold text-slate-900 dark:text-slate-100">
+                Join the Gang
               </CardTitle>
-              <CardDescription className="text-lg text-muted-foreground mt-2">
-                Every great adventure starts with hello
+              <CardDescription className="text-slate-600 dark:text-slate-400 mt-2">
+                Create your account and start your legendary story
               </CardDescription>
             </div>
           </CardHeader>
           
-          <CardContent>
-            <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
-              <div className="form-field grid grid-cols-2 gap-4">
-                <div className="space-y-2">
-                  <Label htmlFor="first_name" className="text-sm font-medium text-foreground">
-                    First Name
-                  </Label>
-                  <Input
-                    id="first_name"
-                    name="first_name"
-                    placeholder="Ted"
-                    value={formData.first_name}
-                    onChange={handleChange}
-                    className="input-cozy"
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label htmlFor="last_name" className="text-sm font-medium text-foreground">
-                    Last Name
-                  </Label>
-                  <Input
-                    id="last_name"
-                    name="last_name"
-                    placeholder="Mosby"
-                    value={formData.last_name}
-                    onChange={handleChange}
-                    className="input-cozy"
-                    required
-                  />
-                </div>
+          <CardContent className="space-y-6">
+            {/* Google Sign Up Button */}
+            <Button 
+              onClick={handleGoogleSignup}
+              variant="outline" 
+              className="form-field w-full h-11 bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 border-slate-300 dark:border-slate-600"
+            >
+              <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
+                <path fill="#4285f4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
+                <path fill="#34a853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+                <path fill="#fbbc05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
+                <path fill="#ea4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+              </svg>
+              Sign up with Google
+            </Button>
+
+            <div className="form-field relative">
+              <div className="absolute inset-0 flex items-center">
+                <span className="w-full border-t border-slate-300 dark:border-slate-600" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                <span className="bg-white dark:bg-slate-800 px-2 text-slate-500 dark:text-slate-400">
+                  Or create with email
+                </span>
+              </div>
+            </div>
+
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="form-field space-y-2">
+                <Label htmlFor="username" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  Username
+                </Label>
+                <Input
+                  id="username"
+                  name="username"
+                  placeholder="Choose a username"
+                  value={formData.username}
+                  onChange={handleChange}
+                  className="h-11 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600"
+                  required
+                />
               </div>
               
               <div className="form-field space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-foreground">
+                <Label htmlFor="email" className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   Email Address
                 </Label>
                 <Input
@@ -181,13 +191,13 @@ export default function Register() {
                   placeholder="your@email.com"
                   value={formData.email}
                   onChange={handleChange}
-                  className="input-cozy"
+                  className="h-11 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600"
                   required
                 />
               </div>
               
               <div className="form-field space-y-2">
-                <Label htmlFor="password" className="text-sm font-medium text-foreground">
+                <Label htmlFor="password" className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   Password
                 </Label>
                 <div className="relative">
@@ -198,27 +208,27 @@ export default function Register() {
                     placeholder="Create a strong password"
                     value={formData.password}
                     onChange={handleChange}
-                    className="input-cozy pr-12"
+                    className="h-11 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 pr-10"
                     required
                   />
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="absolute right-0 top-0 h-14 px-3 py-2 hover:bg-transparent"
+                    className="absolute right-0 top-0 h-11 px-3 hover:bg-transparent"
                     onClick={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (
-                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      <EyeOff className="h-4 w-4 text-slate-400" />
                     ) : (
-                      <Eye className="h-4 w-4 text-muted-foreground" />
+                      <Eye className="h-4 w-4 text-slate-400" />
                     )}
                   </Button>
                 </div>
               </div>
               
               <div className="form-field space-y-2">
-                <Label htmlFor="confirmPassword" className="text-sm font-medium text-foreground">
+                <Label htmlFor="confirmPassword" className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   Confirm Password
                 </Label>
                 <div className="relative">
@@ -229,20 +239,20 @@ export default function Register() {
                     placeholder="Confirm your password"
                     value={formData.confirmPassword}
                     onChange={handleChange}
-                    className="input-cozy pr-12"
+                    className="h-11 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 pr-10"
                     required
                   />
                   <Button
                     type="button"
                     variant="ghost"
                     size="sm"
-                    className="absolute right-0 top-0 h-14 px-3 py-2 hover:bg-transparent"
+                    className="absolute right-0 top-0 h-11 px-3 hover:bg-transparent"
                     onClick={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
                     {showConfirmPassword ? (
-                      <EyeOff className="h-4 w-4 text-muted-foreground" />
+                      <EyeOff className="h-4 w-4 text-slate-400" />
                     ) : (
-                      <Eye className="h-4 w-4 text-muted-foreground" />
+                      <Eye className="h-4 w-4 text-slate-400" />
                     )}
                   </Button>
                 </div>
@@ -250,37 +260,34 @@ export default function Register() {
               
               <Button 
                 type="submit" 
-                className="form-field w-full btn-primary text-lg py-4 shadow-cozy hover:shadow-cozy-lg group"
+                className="form-field w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-medium"
                 disabled={isLoading}
               >
                 {isLoading ? (
                   <>
-                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-primary-foreground mr-2"></div>
-                    Creating your story...
+                    <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white mr-2"></div>
+                    Creating account...
                   </>
                 ) : (
-                  <>
-                    <Users className="mr-2 h-5 w-5 group-hover:scale-110 transition-transform" />
-                    Join WhatUp
-                  </>
+                  "Create Account"
                 )}
               </Button>
             </form>
             
-            <div className="mt-8 text-center space-y-4">
-              <p className="text-sm text-muted-foreground">
-                Already part of the story?{" "}
+            <div className="text-center space-y-4">
+              <p className="text-sm text-slate-600 dark:text-slate-400">
+                Already have an account?{" "}
                 <Link 
                   to="/login" 
-                  className="font-medium text-primary hover:text-primary/80 transition-colors underline decoration-2 underline-offset-4"
+                  className="font-medium text-blue-600 hover:text-blue-700 dark:text-blue-400 dark:hover:text-blue-300"
                 >
                   Sign in here
                 </Link>
               </p>
               
-              <div className="pt-4 border-t border-border/50">
-                <p className="text-xs text-muted-foreground italic">
-                  "The best things in life are the people we love" 💛
+              <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+                <p className="text-xs text-slate-500 dark:text-slate-400 italic">
+                  "Every legend starts with a single step" ✨
                 </p>
               </div>
             </div>
@@ -290,4 +297,3 @@ export default function Register() {
     </div>
   );
 }
-
