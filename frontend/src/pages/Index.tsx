@@ -1,5 +1,3 @@
-
-
 import { Link } from "react-router-dom";
 import { MessageCircle, Users, Shield, Zap, Heart, Coffee } from "lucide-react";
 import { Button } from "@/components/ui/button";
