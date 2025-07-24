@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Eye, EyeOff, MessageCircle, Users } from "lucide-react";
@@ -58,14 +57,14 @@ export default function Register() {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     if (formData.password !== formData.confirmPassword) {
       animate('.register-card', {
         translateX: [-6, 6, -4, 4, -2, 2, 0],
         duration: 400,
         ease: 'out(2)'
       });
-      
+
       toast({
         variant: "destructive",
         title: "Password Mismatch",
@@ -136,7 +135,7 @@ export default function Register() {
               </CardDescription>
             </div>
           </CardHeader>
-          
+
           <CardContent className="space-y-6">
             {/* Google Sign Up Button */}
             <Button 
@@ -175,11 +174,11 @@ export default function Register() {
                   placeholder="Choose a username"
                   value={formData.username}
                   onChange={handleChange}
-                  className="h-11 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600"
+                  className="h-11 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 rounded-md"
                   required
                 />
               </div>
-              
+
               <div className="form-field space-y-2">
                 <Label htmlFor="email" className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   Email Address
@@ -191,11 +190,11 @@ export default function Register() {
                   placeholder="your@email.com"
                   value={formData.email}
                   onChange={handleChange}
-                  className="h-11 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600"
+                  className="h-11 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 rounded-md"
                   required
                 />
               </div>
-              
+
               <div className="form-field space-y-2">
                 <Label htmlFor="password" className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   Password
@@ -208,7 +207,7 @@ export default function Register() {
                     placeholder="Create a strong password"
                     value={formData.password}
                     onChange={handleChange}
-                    className="h-11 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 pr-10"
+                    className="h-11 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 pr-10 rounded-md"
                     required
                   />
                   <Button
@@ -226,7 +225,7 @@ export default function Register() {
                   </Button>
                 </div>
               </div>
-              
+
               <div className="form-field space-y-2">
                 <Label htmlFor="confirmPassword" className="text-sm font-medium text-slate-700 dark:text-slate-300">
                   Confirm Password
@@ -239,7 +238,7 @@ export default function Register() {
                     placeholder="Confirm your password"
                     value={formData.confirmPassword}
                     onChange={handleChange}
-                    className="h-11 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 pr-10"
+                    className="h-11 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 pr-10 rounded-md"
                     required
                   />
                   <Button
@@ -257,7 +256,7 @@ export default function Register() {
                   </Button>
                 </div>
               </div>
-              
+
               <Button 
                 type="submit" 
                 className="form-field w-full h-11 bg-blue-600 hover:bg-blue-700 text-white font-medium"
@@ -273,7 +272,7 @@ export default function Register() {
                 )}
               </Button>
             </form>
-            
+
             <div className="text-center space-y-4">
               <p className="text-sm text-slate-600 dark:text-slate-400">
                 Already have an account?{" "}
@@ -284,7 +283,7 @@ export default function Register() {
                   Sign in here
                 </Link>
               </p>
-              
+
               <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
                 <p className="text-xs text-slate-500 dark:text-slate-400 italic">
                   "Every legend starts with a single step" ✨

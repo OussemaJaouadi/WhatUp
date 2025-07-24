@@ -11,12 +11,6 @@ export default function Navbar() {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const token = localStorage.getItem("jwt_token");
   
-  // Hide navbar on auth pages
-  const hideNavbarPaths = ['/login', '/register'];
-  if (hideNavbarPaths.includes(location.pathname)) {
-    return null;
-  }
-  
   let userRole: string | null = null;
   if (token) {
     try {
@@ -35,7 +29,7 @@ export default function Navbar() {
   const isActivePath = (path: string) => location.pathname === path;
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-800 bg-white/90 dark:bg-slate-900/90 backdrop-blur-sm supports-[backdrop-filter]:bg-white/80 dark:supports-[backdrop-filter]:bg-slate-900/80 shadow-sm">
+    <nav className="sticky top-0 z-50 w-full border-b border-slate-200/60 dark:border-slate-700/60 bg-white/95 dark:bg-slate-900/95 backdrop-blur-md supports-[backdrop-filter]:bg-white/85 dark:supports-[backdrop-filter]:bg-slate-900/85 shadow-lg shadow-slate-900/5 dark:shadow-slate-900/20">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex h-16 items-center justify-between">
           {/* Logo */}
@@ -66,6 +60,9 @@ export default function Navbar() {
                     Get Started
                   </Button>
                 </Link>
+                <div className="ml-2">
+                  <ThemeToggle />
+                </div>
               </>
             ) : (
               <>
@@ -109,14 +106,16 @@ export default function Navbar() {
                   <LogOut className="h-4 w-4 mr-1.5" />
                   Sign Out
                 </Button>
-                <ThemeToggle />
+                <div className="ml-2">
+                  <ThemeToggle />
+                </div>
               </>
             )}
           </div>
 
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center space-x-2">
-            {!token && <ThemeToggle />}
+            <ThemeToggle />
             <Button
               variant="ghost"
               size="sm"

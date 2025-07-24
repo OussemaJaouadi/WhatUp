@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { authService } from "@/services/auth";
-import { animate, createScope } from "animejs";
+import { animate, createScope } from "animejs/lib/anime.es.js";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -147,7 +147,7 @@ export default function Login() {
                   placeholder="your@email.com"
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="h-11 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600"
+                  className="h-11 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 rounded-md"
                   required
                 />
               </div>
@@ -163,7 +163,7 @@ export default function Login() {
                     placeholder="Enter your password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="h-11 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 pr-10"
+                    className="h-11 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 pr-10 rounded-md"
                     required
                   />
                   <Button

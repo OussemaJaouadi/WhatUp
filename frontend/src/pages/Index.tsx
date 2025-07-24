@@ -3,7 +3,7 @@ import { Link } from "react-router-dom";
 import { MessageCircle, Users, Shield, Zap, Heart, Coffee } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useRef } from "react";
-import { animate, createScope } from "animejs";
+import { animate, createScope } from "animejs/lib/anime.es.js";
 
 export default function Index() {
   const heroRef = useRef<HTMLDivElement>(null);
