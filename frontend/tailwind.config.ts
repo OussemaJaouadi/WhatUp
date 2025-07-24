@@ -19,8 +19,8 @@ export default {
     },
     extend: {
       fontFamily: {
-        crimson: ["Crimson Text", "serif"],
-        inter: ["Inter", "sans-serif"],
+        inter: ["Inter", "system-ui", "sans-serif"],
+        outfit: ["Outfit", "system-ui", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -55,39 +55,6 @@ export default {
         card: {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
-          dark: "hsl(var(--card-dark))",
-        },
-        muted: {
-          DEFAULT: "hsl(var(--muted))",
-          foreground: "hsl(var(--muted-foreground))",
-          dark: "hsl(var(--muted-dark))",
-        },
-        input: {
-          DEFAULT: "hsl(var(--input))",
-          dark: "hsl(var(--input-dark))",
-        },
-        border: {
-          DEFAULT: "hsl(var(--border))",
-          dark: "hsl(var(--border-dark))",
-        },
-        primary: {
-          DEFAULT: "hsl(var(--primary))",
-          foreground: "hsl(var(--primary-foreground))",
-          dark: "hsl(var(--primary-dark))",
-        },
-        foreground: {
-          DEFAULT: "hsl(var(--foreground))",
-          dark: "hsl(var(--foreground-dark))",
-        },
-        sidebar: {
-          DEFAULT: "hsl(var(--sidebar-background))",
-          foreground: "hsl(var(--sidebar-foreground))",
-          primary: "hsl(var(--sidebar-primary))",
-          "primary-foreground": "hsl(var(--sidebar-primary-foreground))",
-          accent: "hsl(var(--sidebar-accent))",
-          "accent-foreground": "hsl(var(--sidebar-accent-foreground))",
-          border: "hsl(var(--sidebar-border))",
-          ring: "hsl(var(--sidebar-ring))",
         },
       },
       borderRadius: {
@@ -108,6 +75,13 @@ export default {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+      },
+      spacing: {
+        '18': '4.5rem',
+        '88': '22rem',
+      },
+      maxWidth: {
+        '8xl': '88rem',
       },
     },
   },

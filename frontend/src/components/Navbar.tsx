@@ -1,10 +1,16 @@
+
 import { Link, useLocation, useNavigate } from "react-router-dom";
-import { MessageCircle, LogOut, User, Crown } from "lucide-react";
+import { MessageCircle, LogOut, User, Settings, Menu, X } from "lucide-react";
+import { ThemeToggle } from "./theme/ThemeToggle";
+import { Button } from "@/components/ui/button";
+import { useState } from "react";
 
 export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const token = localStorage.getItem("jwt_token");
+  
   let userRole: string | null = null;
   if (token) {
     try {
@@ -17,29 +23,177 @@ export default function Navbar() {
   const handleLogout = () => {
     localStorage.removeItem("jwt_token");
     navigate("/login");
+    setMobileMenuOpen(false);
   };
 
+  const isActivePath = (path: string) => location.pathname === path;
+
   return (
-    <nav className="w-full bg-card/80 dark:bg-card-dark/80 border-b border-border dark:border-border-dark px-6 py-4 flex items-center justify-between">
-      <Link to="/" className="flex items-center space-x-2">
-        <MessageCircle className="h-6 w-6 text-accent" />
-        <span className="font-crimson font-bold text-xl">WhatUp</span>
-      </Link>
-      <div className="space-x-2 flex items-center">
-        {!token ? (
-          <>
-            <Link to="/login" className={`btn-cozy px-4 py-2${location.pathname === '/login' ? ' ring-2 ring-accent' : ''}`}>Login</Link>
-            <Link to="/register" className={`btn-accent px-4 py-2${location.pathname === '/register' ? ' ring-2 ring-accent' : ''}`}>Register</Link>
-          </>
-        ) : (
-          <>
-            <Link to="/dashboard" className={`btn-cozy px-4 py-2${location.pathname === '/dashboard' ? ' ring-2 ring-accent' : ''}`}>Dashboard</Link>
-            <Link to="/profile" className={`btn-cozy px-4 py-2${location.pathname === '/profile' ? ' ring-2 ring-accent' : ''}`}><User className="inline h-4 w-4 mr-1" />Profile</Link>
-            {userRole === "admin" && (
-              <Link to="/admin" className={`btn-accent px-4 py-2${location.pathname === '/admin' ? ' ring-2 ring-accent' : ''}`}><Crown className="inline h-4 w-4 mr-1" />Admin</Link>
+    <nav className="sticky top-0 z-50 w-full border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+      <div className="container-modern">
+        <div className="flex h-16 items-center justify-between">
+          {/* Logo */}
+          <Link to="/" className="flex items-center space-x-2 hover:opacity-80 transition-opacity">
+            <MessageCircle className="h-6 w-6 text-primary" />
+            <span className="font-outfit font-semibold text-lg">WhatUp</span>
+          </Link>
+
+          {/* Desktop Navigation */}
+          <div className="hidden md:flex items-center space-x-1">
+            {!token ? (
+              <>
+                <Link to="/login">
+                  <Button 
+                    variant={isActivePath('/login') ? 'default' : 'ghost'} 
+                    size="sm"
+                    className="font-medium"
+                  >
+                    Sign In
+                  </Button>
+                </Link>
+                <Link to="/register">
+                  <Button 
+                    variant={isActivePath('/register') ? 'default' : 'outline'} 
+                    size="sm"
+                    className="font-medium ml-2"
+                  >
+                    Get Started
+                  </Button>
+                </Link>
+              </>
+            ) : (
+              <>
+                <Link to="/dashboard">
+                  <Button 
+                    variant={isActivePath('/dashboard') ? 'default' : 'ghost'} 
+                    size="sm"
+                    className="font-medium"
+                  >
+                    Dashboard
+                  </Button>
+                </Link>
+                <Link to="/profile">
+                  <Button 
+                    variant={isActivePath('/profile') ? 'default' : 'ghost'} 
+                    size="sm"
+                    className="font-medium"
+                  >
+                    <User className="h-4 w-4 mr-1.5" />
+                    Profile
+                  </Button>
+                </Link>
+                {userRole === "admin" && (
+                  <Link to="/admin">
+                    <Button 
+                      variant={isActivePath('/admin') ? 'default' : 'ghost'} 
+                      size="sm"
+                      className="font-medium"
+                    >
+                      <Settings className="h-4 w-4 mr-1.5" />
+                      Admin
+                    </Button>
+                  </Link>
+                )}
+                <Button 
+                  onClick={handleLogout} 
+                  variant="ghost" 
+                  size="sm"
+                  className="font-medium text-muted-foreground hover:text-foreground ml-2"
+                >
+                  <LogOut className="h-4 w-4 mr-1.5" />
+                  Sign Out
+                </Button>
+              </>
             )}
-            <button onClick={handleLogout} className="btn-cozy px-4 py-2 flex items-center"><LogOut className="inline h-4 w-4 mr-1" />Logout</button>
-          </>
+            <div className="ml-4 pl-4 border-l border-border">
+              <ThemeToggle />
+            </div>
+          </div>
+
+          {/* Mobile menu button */}
+          <div className="md:hidden flex items-center space-x-2">
+            <ThemeToggle />
+            <Button
+              variant="ghost"
+              size="sm"
+              className="h-9 w-9 p-0"
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? (
+                <X className="h-5 w-5" />
+              ) : (
+                <Menu className="h-5 w-5" />
+              )}
+            </Button>
+          </div>
+        </div>
+
+        {/* Mobile Navigation */}
+        {mobileMenuOpen && (
+          <div className="md:hidden border-t border-border bg-background animate-slide-up">
+            <div className="py-4 space-y-2">
+              {!token ? (
+                <>
+                  <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                    <Button 
+                      variant={isActivePath('/login') ? 'default' : 'ghost'} 
+                      className="w-full justify-start font-medium"
+                    >
+                      Sign In
+                    </Button>
+                  </Link>
+                  <Link to="/register" onClick={() => setMobileMenuOpen(false)}>
+                    <Button 
+                      variant={isActivePath('/register') ? 'default' : 'ghost'} 
+                      className="w-full justify-start font-medium"
+                    >
+                      Get Started
+                    </Button>
+                  </Link>
+                </>
+              ) : (
+                <>
+                  <Link to="/dashboard" onClick={() => setMobileMenuOpen(false)}>
+                    <Button 
+                      variant={isActivePath('/dashboard') ? 'default' : 'ghost'} 
+                      className="w-full justify-start font-medium"
+                    >
+                      Dashboard
+                    </Button>
+                  </Link>
+                  <Link to="/profile" onClick={() => setMobileMenuOpen(false)}>
+                    <Button 
+                      variant={isActivePath('/profile') ? 'default' : 'ghost'} 
+                      className="w-full justify-start font-medium"
+                    >
+                      <User className="h-4 w-4 mr-2" />
+                      Profile
+                    </Button>
+                  </Link>
+                  {userRole === "admin" && (
+                    <Link to="/admin" onClick={() => setMobileMenuOpen(false)}>
+                      <Button 
+                        variant={isActivePath('/admin') ? 'default' : 'ghost'} 
+                        className="w-full justify-start font-medium"
+                      >
+                        <Settings className="h-4 w-4 mr-2" />
+                        Admin
+                      </Button>
+                    </Link>
+                  )}
+                  <Button 
+                    onClick={handleLogout} 
+                    variant="ghost" 
+                    className="w-full justify-start font-medium text-muted-foreground hover:text-foreground"
+                  >
+                    <LogOut className="h-4 w-4 mr-2" />
+                    Sign Out
+                  </Button>
+                </>
+              )}
+            </div>
+          </div>
         )}
       </div>
     </nav>
