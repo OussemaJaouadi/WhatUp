@@ -1,0 +1,207 @@
+@import url('https://fonts.googleapis.com/css2?family=Crimson+Text:ital,wght@0,400;0,600;0,700;1,400&family=Inter:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* WhatUp Design System - Cozy, Nostalgic, HIMYM-Inspired
+All colors MUST be HSL for consistent theming.
+*/
+
+@layer base {
+  :root {
+    /* Warm, cozy color palette inspired by How I Met Your Mother */
+    --background: 45 25% 97%;
+    --foreground: 25 15% 15%;
+
+    --card: 45 30% 98%;
+    --card-foreground: 25 15% 15%;
+
+    --popover: 45 30% 98%;
+    --popover-foreground: 25 15% 15%;
+
+    /* Warm browns and oranges - MacLaren's Pub vibes */
+    --primary: 25 65% 35%;
+    --primary-foreground: 45 25% 97%;
+    --primary-glow: 35 75% 55%;
+
+    /* Cozy secondary tones */
+    --secondary: 35 40% 85%;
+    --secondary-foreground: 25 35% 25%;
+
+    /* Muted warm tones */
+    --muted: 40 25% 90%;
+    --muted-foreground: 25 20% 45%;
+
+    /* Warm accent - burnt orange */
+    --accent: 20 85% 65%;
+    --accent-foreground: 45 25% 97%;
+
+    /* Warm burgundy for destructive actions */
+    --destructive: 0 65% 55%;
+    --destructive-foreground: 45 25% 97%;
+
+    /* Subtle warm borders */
+    --border: 40 20% 85%;
+    --input: 40 20% 85%;
+    --ring: 25 65% 35%;
+
+    --radius: 0.75rem;
+
+    /* Custom gradients for cozy atmosphere */
+    --gradient-warm: linear-gradient(135deg, hsl(35 75% 65%), hsl(25 65% 55%));
+    --gradient-sunset: linear-gradient(135deg, hsl(20 85% 65%), hsl(35 75% 65%), hsl(45 70% 75%));
+    --gradient-cozy: linear-gradient(180deg, hsl(45 25% 97%), hsl(40 30% 94%));
+    
+    /* Warm shadows and glows */
+    --shadow-warm: 0 4px 20px -4px hsl(25 65% 35% / 0.15);
+    --shadow-cozy: 0 8px 30px -8px hsl(35 45% 45% / 0.2);
+    --glow-accent: 0 0 30px hsl(20 85% 65% / 0.3);
+    
+    /* Smooth transitions */
+    --transition-cozy: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+    --sidebar-background: 40 30% 94%;
+    --sidebar-foreground: 25 20% 30%;
+    --sidebar-primary: 25 65% 35%;
+    --sidebar-primary-foreground: 45 25% 97%;
+    --sidebar-accent: 35 40% 88%;
+    --sidebar-accent-foreground: 25 35% 25%;
+    --sidebar-border: 40 20% 85%;
+    --sidebar-ring: 25 65% 35%;
+  }
+
+  .dark {
+    /* Dark mode with warm, cozy tones */
+    --background: 25 20% 8%;
+    --foreground: 45 25% 95%;
+
+    --card: 25 25% 10%;
+    --card-foreground: 45 25% 95%;
+
+    --popover: 25 25% 10%;
+    --popover-foreground: 45 25% 95%;
+
+    --primary: 35 75% 65%;
+    --primary-foreground: 25 20% 8%;
+    --primary-glow: 45 85% 75%;
+
+    --secondary: 25 25% 18%;
+    --secondary-foreground: 45 25% 88%;
+
+    --muted: 25 20% 15%;
+    --muted-foreground: 40 15% 65%;
+
+    --accent: 20 85% 65%;
+    --accent-foreground: 25 20% 8%;
+
+    --destructive: 0 75% 60%;
+    --destructive-foreground: 45 25% 95%;
+
+    --border: 25 20% 20%;
+    --input: 25 20% 20%;
+    --ring: 35 75% 65%;
+
+    /* Dark mode gradients */
+    --gradient-warm: linear-gradient(135deg, hsl(35 65% 45%), hsl(25 55% 35%));
+    --gradient-sunset: linear-gradient(135deg, hsl(20 75% 45%), hsl(35 65% 45%), hsl(45 60% 55%));
+    --gradient-cozy: linear-gradient(180deg, hsl(25 20% 8%), hsl(25 25% 12%));
+    
+    --shadow-warm: 0 4px 20px -4px hsl(0 0% 0% / 0.3);
+    --shadow-cozy: 0 8px 30px -8px hsl(0 0% 0% / 0.4);
+    --glow-accent: 0 0 30px hsl(20 85% 65% / 0.4);
+
+    --sidebar-background: 25 25% 10%;
+    --sidebar-foreground: 45 20% 85%;
+    --sidebar-primary: 35 75% 65%;
+    --sidebar-primary-foreground: 25 20% 8%;
+    --sidebar-accent: 25 20% 15%;
+    --sidebar-accent-foreground: 45 20% 85%;
+    --sidebar-border: 25 20% 20%;
+    --sidebar-ring: 35 75% 65%;
+  }
+}
+
+@layer base {
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-background text-foreground font-inter;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    @apply font-crimson;
+  }
+}
+
+@layer components {
+  /* Custom component styles using design system tokens */
+  .btn-cozy {
+    @apply bg-primary hover:bg-primary-glow text-primary-foreground font-medium rounded-lg px-6 py-3;
+    @apply transition-all duration-300 ease-out;
+    @apply shadow-[var(--shadow-warm)] hover:shadow-[var(--shadow-cozy)];
+    @apply hover:scale-105 active:scale-95;
+  }
+
+  .btn-accent {
+    @apply bg-accent hover:bg-accent/90 text-accent-foreground font-medium rounded-lg px-6 py-3;
+    @apply transition-all duration-300 ease-out;
+    @apply shadow-[var(--shadow-warm)] hover:shadow-[var(--glow-accent)];
+    @apply hover:scale-105 active:scale-95;
+  }
+
+  .card-cozy {
+    @apply bg-card border border-border rounded-xl p-6;
+    @apply shadow-[var(--shadow-warm)] hover:shadow-[var(--shadow-cozy)];
+    @apply transition-all duration-300 ease-out;
+  }
+
+  .gradient-warm {
+    background: var(--gradient-warm);
+  }
+
+  .gradient-sunset {
+    background: var(--gradient-sunset);
+  }
+
+  .gradient-cozy {
+    background: var(--gradient-cozy);
+  }
+
+  .text-glow {
+    text-shadow: 0 0 20px hsl(var(--accent) / 0.5);
+  }
+
+  /* Animations */
+  @keyframes fade-in-up {
+    from {
+      opacity: 0;
+      transform: translateY(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
+  }
+
+  @keyframes fade-in-right {
+    from {
+      opacity: 0;
+      transform: translateX(20px);
+    }
+    to {
+      opacity: 1;
+      transform: translateX(0);
+    }
+  }
+
+  .animate-fade-in-up {
+    animation: fade-in-up 0.8s ease-out forwards;
+  }
+
+  .animate-fade-in-right {
+    animation: fade-in-right 0.8s ease-out forwards;
+  }
+}

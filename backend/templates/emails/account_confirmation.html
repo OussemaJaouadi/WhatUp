@@ -1,0 +1,122 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Account Confirmation</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f1e7db; /* Soft Cream */
+            margin: 0;
+            padding: 0;
+            -webkit-text-size-adjust: 100%;
+            -ms-text-size-adjust: 100%;
+            width: 100%;
+            box-sizing: border-box;
+        }
+        .wrapper {
+            width: 100%;
+            table-layout: fixed;
+            -webkit-font-smoothing: antialiased;
+            background-color: #f1e7db; /* Soft Cream */
+        }
+        .main {
+            max-width: 600px;
+            margin: 0 auto;
+            background-color: #f1e7db; /* Soft Cream */
+            border-radius: 15px; /* Large rounded corners */
+            box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15); /* Softer, slightly larger shadow */
+            border: 1px solid #e0d7cc; /* Slightly darker cream border */
+            overflow: hidden; /* Ensures rounded corners are respected */
+        }
+        .header {
+            background-color: #361d32; /* Deep Plum */
+            padding: 25px 30px;
+            text-align: center;
+            border-top-left-radius: 15px;
+            border-top-right-radius: 15px;
+        }
+        .header h1 {
+            color: #f1e7db; /* Soft Cream for header text */
+            font-size: 32px;
+            margin: 0;
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.2);
+        }
+        .content {
+            padding: 30px;
+            text-align: center;
+        }
+        .content h2 {
+            color: #7c3a2d; /* Vintage Brick */
+            font-size: 26px;
+            margin-top: 0;
+            margin-bottom: 20px;
+        }
+        .content p {
+            color: #1a1a1a; /* Almost-black */
+            font-size: 17px;
+            line-height: 1.7;
+            margin-bottom: 25px;
+        }
+        .button-container {
+            margin-top: 30px;
+            margin-bottom: 20px;
+        }
+        .button {
+            display: inline-block;
+            background-color: #d8b08c; /* Warm Beige */
+            color: #361d32; /* Deep Plum */
+            padding: 15px 35px;
+            border-radius: 12px; /* More rounded button */
+            text-decoration: none;
+            font-weight: bold;
+            font-size: 19px;
+            box-shadow: 0 3px 6px rgba(0, 0, 0, 0.15); /* Soft shadow for button */
+            transition: background-color 0.3s ease;
+            border: 1px solid #c7a07c; /* Subtle border for button */
+        }
+        .button:hover {
+            background-color: #c7a07c; /* Slightly darker Warm Beige on hover */
+        }
+        .footer {
+            background-color: #7c3a2d; /* Vintage Brick */
+            padding: 20px 30px;
+            text-align: center;
+            border-bottom-left-radius: 15px;
+            border-bottom-right-radius: 15px;
+        }
+        .footer p {
+            color: #f1e7db; /* Soft Cream for footer text */
+            font-size: 14px;
+            margin: 0;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <center class="wrapper">
+        <table class="main" width="100%" cellpadding="0" cellspacing="0">
+            <tr>
+                <td class="header">
+                    <h1>WhatUp</h1>
+                </td>
+            </tr>
+            <tr>
+                <td class="content">
+                    <h2>Welcome, {{ username }}!</h2>
+                    <p>Thank you for joining the WhatUp community! To get started and unlock all features, please confirm your account by clicking the button below:</p>
+                    <div class="button-container">
+                        <a href="{{ confirmation_link }}" class="button">Confirm My Account</a>
+                    </div>
+                    <p>If you did not register for an account, please disregard this email.</p>
+                </td>
+            </tr>
+            <tr>
+                <td class="footer">
+                    <p>&copy; <a href="https://oussemajaouadi.site/" style="color: #f1e7db; text-decoration: none;">OussemaJaouadi</a></p>
+                    <p>This email was sent from an automated system. Please do not reply.</p>
+                </td>
+            </tr>
+        </table>
+    </center>
+</body>
+</html>

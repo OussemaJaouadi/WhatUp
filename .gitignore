@@ -1,0 +1,18 @@
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.db
+*.sqlite3
+*.env
+
+**/.ruff_cache/**
+vscode/
+.idea/
+*.vscode/
+error.log
+
+# Personal Files
+prds/*
+REPOSITORY_ANALYSIS.md
+prompt.md

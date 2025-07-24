@@ -1,0 +1,65 @@
+services:
+  # MinIO S3-compatible storage
+  minio:
+    image: minio/minio:latest
+    container_name: whatup-minio
+    restart: unless-stopped
+    ports:
+      - "9000:9000"  # API port
+      - "9001:9001"  # Web UI port
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+      MINIO_DEFAULT_REGION: ${MINIO_DEFAULT_REGION:-eu-west-1}
+      MINIO_BROWSER: "on"
+      MINIO_ADDRESS: :9000
+      MINIO_CONSOLE_ADDRESS: :9001
+    volumes:
+      - minio_data:/data
+    command: server /data --console-address ":9001"
+    networks:
+      - whatup-network
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+
+  # MinIO setup container for initial configuration
+  # Runs only on the first run to set up buckets and policies
+  # The second run will errase the bucket's data
+
+  # minio-setup:
+  #   image: minio/mc:latest
+  #   container_name: whatup-minio-setup
+  #   depends_on:
+  #     minio:
+  #       condition: service_healthy
+  #   volumes:
+  #     - ./minio:/scripts
+  #   networks:
+  #     - whatup-network
+  #   environment:
+  #     MINIO_ROOT_USER: ${MINIO_ROOT_USER:-minioadmin}
+  #     MINIO_ROOT_PASSWORD: ${MINIO_ROOT_PASSWORD:-minioadmin123}
+  #   entrypoint: >
+  #     /bin/sh -c "
+  #     mc alias set myminio http://minio:9000 $MINIO_ROOT_USER $MINIO_ROOT_PASSWORD &&
+  #     echo 'Creating whatup bucket...' &&
+  #     mc mb myminio/whatup --ignore-existing &&
+  #     echo 'Setting bucket policy...' &&
+  #     if [ -f /scripts/policy.json ]; then
+  #       mc anonymous set-json /scripts/policy.json myminio/whatup
+  #     else
+  #       mc anonymous set download myminio/whatup
+  #     fi &&
+  #     echo 'MinIO setup completed successfully'
+  #     "
+  #   restart: "no"
+
+volumes:
+  minio_data:
+
+networks:
+  whatup-network:
+    driver: bridge
