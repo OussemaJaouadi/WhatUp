@@ -43,7 +43,7 @@
     --input: 36 33% 85%;
     --ring: 320 29% 20%;
 
-    --radius: 0.5rem; /* More edgy, less rounded corners */
+    --radius: 0.25rem; /* More edgy, less rounded */
 
     /* Cozy shadows */
     --shadow-sm: 0 2px 4px 0 rgb(54 29 50 / 0.08);
@@ -170,7 +170,7 @@
     @apply focus:border-primary/50;
     @apply disabled:cursor-not-allowed disabled:opacity-50;
     @apply transition-all duration-300 ease-out;
-    border-radius: 0.375rem; /* More edgy */
+    border-radius: 0.25rem; /* More edgy */
   }
 
   .input-cozy:focus {

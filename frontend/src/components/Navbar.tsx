@@ -1,4 +1,3 @@
-
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { MessageCircle, LogOut, User, Settings, Menu, X } from "lucide-react";
 import { ThemeToggle } from "./theme/ThemeToggle";
@@ -10,7 +9,7 @@ export default function Navbar() {
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const token = localStorage.getItem("jwt_token");
-  
+
   let userRole: string | null = null;
   if (token) {
     try {
@@ -60,9 +59,7 @@ export default function Navbar() {
                     Get Started
                   </Button>
                 </Link>
-                <div className="ml-2">
-                  <ThemeToggle />
-                </div>
+                
               </>
             ) : (
               <>
@@ -106,16 +103,14 @@ export default function Navbar() {
                   <LogOut className="h-4 w-4 mr-1.5" />
                   Sign Out
                 </Button>
-                <div className="ml-2">
-                  <ThemeToggle />
-                </div>
+                
               </>
             )}
           </div>
 
           {/* Mobile menu button */}
           <div className="md:hidden flex items-center space-x-2">
-            <ThemeToggle />
+            
             <Button
               variant="ghost"
               size="sm"
@@ -193,9 +188,7 @@ export default function Navbar() {
                     <LogOut className="h-4 w-4 mr-2" />
                     Sign Out
                   </Button>
-                  <div className="px-3 pt-2">
-                    <ThemeToggle />
-                  </div>
+                  
                 </>
               )}
             </div>

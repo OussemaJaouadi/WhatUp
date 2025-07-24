@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { authService } from "@/services/auth";
-import { animate, createScope } from "animejs/lib/anime.es.js";
+import { animate, createScope } from "animejs";
 
 export default function Login() {
   const [email, setEmail] = useState("");
