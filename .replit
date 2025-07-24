@@ -1,8 +1,28 @@
 modules = ["python-3.12", "cpp-clang14", "nodejs-20", "web"]
-run = "npm run dev"
+
+run = "cd frontend && npm run dev"
 
 [nix]
 channel = "stable-25_05"
 
 [deployment]
 run = ["sh", "-c", "npm run dev"]
+
+[workflows]
+
+[[workflows.workflow]]
+name = "Run frontend"
+mode = "sequential"
+author = 45479370
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "cd frontend"
+
+[[workflows.workflow.tasks]]
+task = "packager.installForLanguage"
+args = "nodejs"
+
+[[workflows.workflow.tasks]]
+task = "shell.exec"
+args = "npm run dev"
