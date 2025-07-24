@@ -3,11 +3,12 @@ import { Moon, Sun } from "lucide-react";
 import { useTheme } from "./ThemeProvider";
 import { Button } from "@/components/ui/button";
 import { useEffect, useRef } from "react";
-import anime from "animejs";
+import { animate, createScope } from "animejs";
 
 export function ThemeToggle() {
   const { theme, setTheme } = useTheme();
   const buttonRef = useRef<HTMLButtonElement>(null);
+  const scope = useRef<any>(null);
   
   const isDark = (() => {
     if (theme === "dark") return true;
@@ -19,30 +20,30 @@ export function ThemeToggle() {
     setTheme(isDark ? "light" : "dark");
     
     // Cozy animation on toggle
-    if (buttonRef.current) {
-      anime({
-        targets: buttonRef.current,
-        scale: [1, 1.1, 1],
-        rotate: [0, 180, 360],
-        duration: 600,
-        easing: 'easeOutElastic(1, .8)'
-      });
-    }
+    animate('.theme-toggle-btn', {
+      scale: [1, 1.1, 1],
+      rotate: [0, 180, 360],
+      duration: 600,
+      ease: 'outElastic(1, .8)'
+    });
   };
 
   useEffect(() => {
-    // Initial cozy entrance animation
-    if (buttonRef.current) {
-      anime({
-        targets: buttonRef.current,
+    if (!buttonRef.current) return;
+
+    scope.current = createScope({ root: buttonRef.current }).add(() => {
+      // Initial cozy entrance animation
+      animate('.theme-toggle-btn', {
         translateY: [50, 0],
         opacity: [0, 1],
         scale: [0.8, 1],
         duration: 800,
         delay: 1000,
-        easing: 'easeOutElastic(1, .8)'
+        ease: 'outElastic(1, .8)'
       });
-    }
+    });
+
+    return () => scope.current?.revert();
   }, []);
 
   return (
@@ -52,7 +53,7 @@ export function ThemeToggle() {
         variant="outline" 
         size="lg"
         onClick={handleToggle} 
-        className="h-14 w-14 p-0 btn-primary shadow-cozy-lg glow-warm hover:glow-yellow transition-all duration-300 group"
+        className="theme-toggle-btn h-14 w-14 p-0 btn-primary shadow-cozy-lg glow-warm hover:glow-yellow transition-all duration-300 group"
         aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       >
         {isDark ? (

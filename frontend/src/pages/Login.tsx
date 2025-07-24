@@ -7,7 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { authService } from "@/services/auth";
-import anime from "animejs";
+import { animate, createScope } from "animejs";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -18,30 +18,32 @@ export default function Login() {
   const navigate = useNavigate();
   const cardRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const scope = useRef<any>(null);
 
   useEffect(() => {
-    // Cozy entrance animation
-    if (cardRef.current) {
-      anime({
-        targets: cardRef.current,
+    if (!cardRef.current) return;
+
+    scope.current = createScope({ root: cardRef.current }).add(() => {
+      // Cozy entrance animation for card
+      animate('.login-card', {
         translateY: [50, 0],
         opacity: [0, 1],
         scale: [0.95, 1],
         duration: 800,
-        easing: 'easeOutExpo'
+        ease: 'out(3)'
       });
-    }
 
-    if (formRef.current?.children) {
-      anime({
-        targets: formRef.current.children,
+      // Staggered animation for form elements
+      animate('.form-field', {
         translateY: [30, 0],
         opacity: [0, 1],
-        delay: anime.stagger(100, {start: 300}),
+        delay: (el, i) => i * 100 + 300,
         duration: 600,
-        easing: 'easeOutExpo'
+        ease: 'out(3)'
       });
-    }
+    });
+
+    return () => scope.current?.revert();
   }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -55,11 +57,10 @@ export default function Login() {
         localStorage.setItem("jwt_token", response.token);
         
         // Success animation
-        anime({
-          targets: cardRef.current,
+        animate('.login-card', {
           scale: [1, 1.05, 1],
           duration: 400,
-          easing: 'easeOutElastic(1, .8)',
+          ease: 'outElastic(1, .8)',
           complete: () => {
             toast({
               title: "Welcome back! ☕",
@@ -71,11 +72,10 @@ export default function Login() {
       }
     } catch (error: any) {
       // Error shake animation
-      anime({
-        targets: cardRef.current,
+      animate('.login-card', {
         translateX: [-10, 10, -8, 8, -6, 6, -4, 4, -2, 2, 0],
         duration: 500,
-        easing: 'easeOutExpo'
+        ease: 'out(3)'
       });
 
       toast({
@@ -91,7 +91,7 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-gradient-cozy flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <Card ref={cardRef} className="card-cozy shadow-cozy-lg border-0 bg-card/95 backdrop-blur-sm">
+        <Card ref={cardRef} className="login-card card-cozy shadow-cozy-lg border-0 bg-card/95 backdrop-blur-sm">
           <CardHeader className="space-y-4 text-center pb-8">
             <div className="mx-auto p-3 bg-primary/10 rounded-2xl w-fit">
               <Coffee className="h-8 w-8 text-primary" />
@@ -108,7 +108,7 @@ export default function Login() {
           
           <CardContent>
             <form ref={formRef} onSubmit={handleSubmit} className="space-y-6">
-              <div className="space-y-2">
+              <div className="form-field space-y-2">
                 <Label htmlFor="email" className="text-sm font-medium text-foreground">
                   Email Address
                 </Label>
@@ -123,7 +123,7 @@ export default function Login() {
                 />
               </div>
               
-              <div className="space-y-2">
+              <div className="form-field space-y-2">
                 <Label htmlFor="password" className="text-sm font-medium text-foreground">
                   Password
                 </Label>
@@ -155,7 +155,7 @@ export default function Login() {
               
               <Button 
                 type="submit" 
-                className="w-full btn-primary text-lg py-4 shadow-cozy hover:shadow-cozy-lg group"
+                className="form-field w-full btn-primary text-lg py-4 shadow-cozy hover:shadow-cozy-lg group"
                 disabled={isLoading}
               >
                 {isLoading ? (

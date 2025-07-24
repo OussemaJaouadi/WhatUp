@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { authService } from "@/services/auth";
-import anime from "animejs";
+import { animate, createScope } from "animejs";
 
 export default function Register() {
   const [formData, setFormData] = useState({
@@ -25,30 +25,32 @@ export default function Register() {
   const navigate = useNavigate();
   const cardRef = useRef<HTMLDivElement>(null);
   const formRef = useRef<HTMLFormElement>(null);
+  const scope = useRef<any>(null);
 
   useEffect(() => {
-    // Cozy entrance animation
-    if (cardRef.current) {
-      anime({
-        targets: cardRef.current,
+    if (!cardRef.current) return;
+
+    scope.current = createScope({ root: cardRef.current }).add(() => {
+      // Cozy entrance animation for card
+      animate('.register-card', {
         translateY: [50, 0],
         opacity: [0, 1],
         scale: [0.95, 1],
         duration: 800,
-        easing: 'easeOutExpo'
+        ease: 'out(3)'
       });
-    }
 
-    if (formRef.current?.children) {
-      anime({
-        targets: formRef.current.children,
+      // Staggered animation for form elements
+      animate('.form-field', {
         translateY: [30, 0],
         opacity: [0, 1],
-        delay: anime.stagger(80, {start: 300}),
+        delay: (el, i) => i * 80 + 300,
         duration: 600,
-        easing: 'easeOutExpo'
+        ease: 'out(3)'
       });
-    }
+    });
+
+    return () => scope.current?.revert();
   }, []);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -62,11 +64,10 @@ export default function Register() {
     e.preventDefault();
     
     if (formData.password !== formData.confirmPassword) {
-      anime({
-        targets: cardRef.current,
+      animate('.register-card', {
         translateX: [-8, 8, -6, 6, -4, 4, -2, 2, 0],
         duration: 400,
-        easing: 'easeOutExpo'
+        ease: 'out(3)'
       });
       
       toast({
@@ -88,11 +89,10 @@ export default function Register() {
       });
 
       // Success animation
-      anime({
-        targets: cardRef.current,
+      animate('.register-card', {
         scale: [1, 1.05, 1],
         duration: 600,
-        easing: 'easeOutElastic(1, .8)',
+        ease: 'outElastic(1, .8)',
         complete: () => {
           toast({
             title: "Welcome to the gang! 🎉",
@@ -103,11 +103,10 @@ export default function Register() {
       });
     } catch (error: any) {
       // Error shake animation
-      anime({
-        targets: cardRef.current,
+      animate('.register-card', {
         translateX: [-10, 10, -8, 8, -6, 6, -4, 4, -2, 2, 0],
         duration: 500,
-        easing: 'easeOutExpo'
+        ease: 'out(3)'
       });
 
       toast({
@@ -123,7 +122,7 @@ export default function Register() {
   return (
     <div className="min-h-screen bg-gradient-cozy flex items-center justify-center p-4">
       <div className="w-full max-w-md">
-        <Card ref={cardRef} className="card-cozy shadow-cozy-lg border-0 bg-card/95 backdrop-blur-sm">
+        <Card ref={cardRef} className="register-card card-cozy shadow-cozy-lg border-0 bg-card/95 backdrop-blur-sm">
           <CardHeader className="space-y-4 text-center pb-8">
             <div className="mx-auto p-3 bg-primary/10 rounded-2xl w-fit">
               <Heart className="h-8 w-8 text-primary" />
@@ -140,7 +139,7 @@ export default function Register() {
           
           <CardContent>
             <form ref={formRef} onSubmit={handleSubmit} className="space-y-5">
-              <div className="grid grid-cols-2 gap-4">
+              <div className="form-field grid grid-cols-2 gap-4">
                 <div className="space-y-2">
                   <Label htmlFor="first_name" className="text-sm font-medium text-foreground">
                     First Name
@@ -171,7 +170,7 @@ export default function Register() {
                 </div>
               </div>
               
-              <div className="space-y-2">
+              <div className="form-field space-y-2">
                 <Label htmlFor="email" className="text-sm font-medium text-foreground">
                   Email Address
                 </Label>
@@ -187,7 +186,7 @@ export default function Register() {
                 />
               </div>
               
-              <div className="space-y-2">
+              <div className="form-field space-y-2">
                 <Label htmlFor="password" className="text-sm font-medium text-foreground">
                   Password
                 </Label>
@@ -218,7 +217,7 @@ export default function Register() {
                 </div>
               </div>
               
-              <div className="space-y-2">
+              <div className="form-field space-y-2">
                 <Label htmlFor="confirmPassword" className="text-sm font-medium text-foreground">
                   Confirm Password
                 </Label>
@@ -251,7 +250,7 @@ export default function Register() {
               
               <Button 
                 type="submit" 
-                className="w-full btn-primary text-lg py-4 shadow-cozy hover:shadow-cozy-lg group"
+                className="form-field w-full btn-primary text-lg py-4 shadow-cozy hover:shadow-cozy-lg group"
                 disabled={isLoading}
               >
                 {isLoading ? (

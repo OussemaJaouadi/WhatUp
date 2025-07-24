@@ -2,41 +2,53 @@ import { Link } from "react-router-dom";
 import { MessageCircle, Users, Shield, Zap, Heart, Coffee } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useEffect, useRef } from "react";
-import anime from "animejs";
+import { animate, createScope } from "animejs";
 
 export default function Index() {
   const heroRef = useRef<HTMLDivElement>(null);
   const featuresRef = useRef<HTMLDivElement>(null);
   const ctaRef = useRef<HTMLDivElement>(null);
+  const scope = useRef<any>(null);
 
   useEffect(() => {
-    // Cozy entrance animations
-    const timeline = anime.timeline({
-      easing: 'easeOutExpo',
+    if (!heroRef.current) return;
+    
+    scope.current = createScope({ root: document.body }).add(() => {
+      // Hero section animation
+      if (heroRef.current?.children) {
+        animate(Array.from(heroRef.current.children), {
+          translateY: [60, 0],
+          opacity: [0, 1],
+          delay: (el, i) => i * 150,
+          duration: 800,
+          ease: 'out(3)'
+        });
+      }
+
+      // Features section animation
+      if (featuresRef.current?.children) {
+        animate(Array.from(featuresRef.current.children), {
+          translateY: [40, 0],
+          opacity: [0, 1],
+          delay: (el, i) => i * 100 + 400,
+          duration: 600,
+          ease: 'out(3)'
+        });
+      }
+
+      // CTA section animation
+      if (ctaRef.current?.children) {
+        animate(Array.from(ctaRef.current.children), {
+          scale: [0.8, 1],
+          opacity: [0, 1],
+          delay: (el, i) => i * 100 + 700,
+          duration: 600,
+          ease: 'out(3)'
+        });
+      }
     });
 
-    timeline
-      .add({
-        targets: heroRef.current?.children,
-        translateY: [60, 0],
-        opacity: [0, 1],
-        delay: anime.stagger(150),
-        duration: 800,
-      })
-      .add({
-        targets: featuresRef.current?.children,
-        translateY: [40, 0],
-        opacity: [0, 1],
-        delay: anime.stagger(100),
-        duration: 600,
-      }, '-=400')
-      .add({
-        targets: ctaRef.current?.children,
-        scale: [0.8, 1],
-        opacity: [0, 1],
-        delay: anime.stagger(100),
-        duration: 600,
-      }, '-=300');
+    return () => scope.current?.revert();
   }, []);
 
   return (
