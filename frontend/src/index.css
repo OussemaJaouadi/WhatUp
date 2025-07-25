@@ -53,34 +53,34 @@
   }
 
   .dark {
-    /* Dark mode - Cozy evening apartment vibes */
-    --background: 320 29% 8%; /* Very dark plum */
-    --foreground: 42 29% 92%;
+    /* Dark mode - Modern, desaturated palette */
+    --background: 220 15% 10%; /* Deep charcoal */
+    --foreground: 210 20% 90%; /* Light grey */
 
-    --card: 320 29% 12%;
-    --card-foreground: 42 29% 92%;
+    --card: 220 15% 14%; /* Slightly lighter charcoal for cards */
+    --card-foreground: 210 20% 90%;
 
-    --popover: 320 29% 12%;
-    --popover-foreground: 42 29% 92%;
+    --popover: 220 15% 14%;
+    --popover-foreground: 210 20% 90%;
 
-    --primary: 36 33% 72%; /* Warm Beige as primary in dark */
-    --primary-foreground: 320 29% 8%;
+    --primary: 200 70% 50%; /* Vibrant blue */
+    --primary-foreground: 220 15% 10%;
 
-    --secondary: 15 46% 25%; /* Darker vintage brick */
-    --secondary-foreground: 42 29% 92%;
+    --secondary: 280 30% 40%; /* Muted purple */
+    --secondary-foreground: 210 20% 90%;
 
-    --muted: 320 29% 15%;
-    --muted-foreground: 36 33% 65%;
+    --muted: 220 10% 20%; /* Darker grey for muted elements */
+    --muted-foreground: 210 10% 60%;
 
-    --accent: 320 29% 15%;
-    --accent-foreground: 42 29% 92%;
+    --accent: 220 10% 25%; /* Slightly lighter grey for accent */
+    --accent-foreground: 210 20% 90%;
 
-    --destructive: 51 100% 50%;
-    --destructive-foreground: 320 29% 8%;
+    --destructive: 0 70% 50%; /* Red for destructive actions */
+    --destructive-foreground: 210 20% 90%;
 
-    --border: 320 29% 18%;
-    --input: 320 29% 18%;
-    --ring: 36 33% 72%;
+    --border: 220 10% 25%;
+    --input: 220 10% 25%;
+    --ring: 200 70% 50%;
   }
 
   * {
@@ -251,15 +251,21 @@
 
   /* Chat-specific styles */
   .chat-bubble {
-    @apply p-4 max-w-xs lg:max-w-md;
-    border-radius: 1.5rem 1.5rem 1.5rem 0.5rem;
+    @apply p-3 max-w-[70%];
+    border-radius: 0.75rem;
     background: hsl(var(--muted));
-    box-shadow: var(--shadow);
+    box-shadow: var(--shadow-sm);
+    word-break: break-word;
   }
 
   .chat-bubble-sent {
     @apply bg-primary text-primary-foreground;
-    border-radius: 1.5rem 1.5rem 0.5rem 1.5rem;
+    border-radius: 0.75rem;
+  }
+
+  .chat-bubble-received {
+    @apply bg-card text-foreground;
+    border-radius: 0.75rem;
   }
 
   /* Nostalgic glow effects */

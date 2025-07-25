@@ -1,4 +1,3 @@
-
 import { Link } from "react-router-dom";
 import { MessageCircle, Users, Shield, Zap, Heart, Coffee } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -13,7 +12,6 @@ export default function Index() {
 
   useEffect(() => {
     if (!heroRef.current) return;
-    
     scope.current = createScope({ root: document.body }).add(() => {
       if (heroRef.current?.children) {
         animate(Array.from(heroRef.current.children), {
@@ -21,7 +19,7 @@ export default function Index() {
           opacity: [0, 1],
           delay: (el, i) => i * 120,
           duration: 600,
-          ease: 'out(2)'
+          easing: 'easeOutExpo'
         });
       }
 
@@ -31,17 +29,18 @@ export default function Index() {
           opacity: [0, 1],
           delay: (el, i) => i * 80 + 300,
           duration: 500,
-          ease: 'out(2)'
+          easing: 'easeOutExpo'
         });
       }
 
       if (ctaRef.current?.children) {
         animate(Array.from(ctaRef.current.children), {
-          scale: [0.95, 1],
+          scale: [0.92, 1],
           opacity: [0, 1],
-          delay: (el, i) => i * 80 + 600,
+          translateY: [20, 0],
+          delay: (el, i) => i * 60 + 500,
           duration: 500,
-          ease: 'out(2)'
+          easing: 'easeOutExpo'
         });
       }
     });
@@ -139,41 +138,37 @@ export default function Index() {
         </div>
       </section>
 
-      {/* CTA Section */}
-      <section className="py-20 px-4 sm:px-6 lg:px-8 bg-gradient-to-r from-amber-600 to-orange-600 text-white">
-        <div className="max-w-4xl mx-auto text-center" ref={ctaRef}>
-          <h2 className="text-4xl md:text-5xl font-bold mb-6">
-            Ready to Write Your Story?
+      {/* CTA Section - Improved, smaller, animated, dark mode uses vibrant colors, light mode uses lighter colors */}
+      <section className="py-12 px-4 sm:px-6 lg:px-8 bg-gradient-to-r dark:from-amber-700 dark:via-orange-700 dark:to-pink-700 from-amber-200 via-orange-200 to-pink-200 text-white dark:text-white text-slate-900 relative overflow-hidden">
+        <div className="absolute inset-0 pointer-events-none opacity-30 dark:opacity-20">
+          <svg width="100%" height="100%" viewBox="0 0 1440 320" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <path fill="currentColor" d="M0,160L48,170.7C96,181,192,203,288,197.3C384,192,480,160,576,154.7C672,149,768,171,864,186.7C960,203,1056,213,1152,197.3C1248,181,1344,139,1392,117.3L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z" />
+          </svg>
+        </div>
+        <div className="max-w-2xl mx-auto text-center relative z-10" ref={ctaRef}>
+          <h2 className="text-3xl md:text-4xl font-extrabold mb-4 drop-shadow-lg dark:text-amber-300 text-amber-700">
+            Join the Conversation Revolution
           </h2>
-          <p className="text-xl mb-8 opacity-90 max-w-2xl mx-auto">
-            Join WhatUp today and start building the kind of connections 
-            that make every conversation legendary.
+          <p className="text-lg mb-6 opacity-95 max-w-xl mx-auto leading-relaxed dark:text-slate-200 text-slate-700">
+            Become part of a vibrant community where every message matters.<br className="hidden md:inline" /> Sign up now and make your mark in legendary chats!
           </p>
           <Link to="/register">
             <Button 
               size="lg" 
               variant="secondary"
-              className="bg-white text-amber-600 hover:bg-slate-50 text-lg px-12 py-4 shadow-lg hover:shadow-xl transition-all duration-300 group"
+              className="bg-white text-amber-600 hover:bg-slate-50 dark:bg-amber-950 dark:text-amber-300 text-base px-8 py-3 shadow-xl hover:scale-105 transition-all duration-300 group font-semibold"
             >
               <MessageCircle className="mr-2 h-5 w-5 group-hover:rotate-12 transition-transform" />
-              Begin Your Journey
+              Get Started
             </Button>
           </Link>
+          <div className="mt-4 text-sm text-slate-700 dark:text-amber-200">
+            Already have an account? <Link to="/login" className="underline hover:text-amber-600 dark:hover:text-amber-300">Sign In</Link>
+          </div>
         </div>
       </section>
 
-      {/* Footer */}
-      <footer className="py-12 bg-slate-900 dark:bg-slate-950 border-t border-slate-800">
-        <div className="max-w-4xl mx-auto text-center px-4">
-          <div className="flex items-center justify-center space-x-2 mb-4">
-            <MessageCircle className="h-6 w-6 text-amber-400" />
-            <span className="font-bold text-xl text-white">WhatUp</span>
-          </div>
-          <p className="text-slate-400">
-            Making conversations legendary, one chat at a time. 🍻
-          </p>
-        </div>
-      </footer>
+      {/* ...footer is now a shared component... */}
     </div>
   );
 }

@@ -56,7 +56,8 @@ class UserService:
             return User.model_validate(user)
 
     async def login_user(self, user_login: UserLogin) -> TokenData:
-        async with self.db_session_factory() as session:
+        session = self.db_session_factory()
+        try:
             user = None
             # Try to find user by username
             result = await session.execute(select(UserModel).where(UserModel.username == user_login.username))
@@ -89,6 +90,8 @@ class UserService:
             
             token_payload = TokenPayload(sub=user.id, role=user.role.value, exp=int(expire.timestamp()))
             return await create_access_token(token_payload)
+        finally:
+            await session.close()
 
     async def get_me(self, user_id: str) -> User:
         async with self.db_session_factory() as session:

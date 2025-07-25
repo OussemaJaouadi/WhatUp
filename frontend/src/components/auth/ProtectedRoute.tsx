@@ -1,21 +1,24 @@
 import React from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { jwtDecode } from 'jwt-decode';
 import { DecodedToken } from '@/types/auth';
+import { authUtils } from '@/lib/authUtils';
 
 interface ProtectedRouteProps {
   allowedRoles?: string[];
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
-  const token = localStorage.getItem('jwt_token');
+  const token = authUtils.getToken();
 
   if (!token) {
     return <Navigate to="/" replace />;
   }
 
   try {
-    const decodedToken = jwtDecode<DecodedToken>(token);
+    const decodedToken = authUtils.decodeToken(token);
+    if (!decodedToken) {
+      throw new Error("Invalid token");
+    }
     const userRole = decodedToken.role; // Assuming your JWT has a 'role' claim
 
     if (allowedRoles && !allowedRoles.includes(userRole)) {
@@ -26,7 +29,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
     return <Outlet />;
   } catch (error) {
     console.error("Invalid token:", error);
-    localStorage.removeItem('jwt_token'); // Clear invalid token
+    authUtils.removeToken(); // Clear invalid token
     return <Navigate to="/" replace />;
   }
 };

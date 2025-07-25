@@ -12,7 +12,7 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { 
   Shield, 
   Users, 
-  Trash2, 
+  Trash2,
   Edit3,
   Search,
   UserPlus,
@@ -28,6 +28,10 @@ import { userService } from "../services/user";
 import { useToast } from "@/components/ui/use-toast";
 import { UserResponseAdminDto } from '@/types/user';
 import { UserImageResponseDto } from '@/types/userImage';
+import { authUtils } from "@/lib/authUtils";
+import { getObjectStorageBaseUrl } from "@/lib/env";
+
+const objectStorageBaseUrl = getObjectStorageBaseUrl();
 
 const Admin = () => {
   const navigate = useNavigate();
@@ -221,7 +225,7 @@ const Admin = () => {
                         <Avatar className="h-12 w-12">
                           {/* Use user's active_avatar_url if present, otherwise fallback to placeholder */}
                           <AvatarImage
-                            src={user.active_avatar_url ? user.active_avatar_url : '/placeholder.svg'}
+                            src={user.active_avatar_url ? `${objectStorageBaseUrl}/${user.active_avatar_url}` : '/placeholder.svg'}
                             alt={user.username}
                           />
                           <AvatarFallback className="bg-accent/10 text-accent">
@@ -408,7 +412,7 @@ const Admin = () => {
                   {selectedUserProfileImages.map((image) => (
                     <div key={image.id} className="relative w-full h-24 rounded-md overflow-hidden">
                       <img 
-                        src={`${import.meta.env.VITE_API_BASE_URL}user/profile-images/${image.id}/data`}
+                        src={`${objectStorageBaseUrl}/${image.image_key}`}
                         alt="Profile" 
                         className="w-full h-full object-cover"
                       />

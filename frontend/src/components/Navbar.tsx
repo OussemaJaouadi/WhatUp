@@ -3,24 +3,18 @@ import { MessageCircle, LogOut, User, Settings, Menu, X } from "lucide-react";
 import { ThemeToggle } from "./theme/ThemeToggle";
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
+import { authUtils } from "@/lib/authUtils";
 
 export default function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const token = localStorage.getItem("jwt_token");
+  const token = authUtils.getToken();
 
-  let userRole: string | null = null;
-  if (token) {
-    try {
-      userRole = JSON.parse(atob(token.split(".")[1])).role;
-    } catch (error) {
-      console.error("Error decoding token:", error);
-    }
-  }
+  const userRole = authUtils.getUserRole();
 
   const handleLogout = () => {
-    localStorage.removeItem("jwt_token");
+    authUtils.removeToken();
     navigate("/login");
     setMobileMenuOpen(false);
   };

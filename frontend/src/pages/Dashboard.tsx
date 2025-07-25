@@ -18,9 +18,11 @@ import {
 import { useNavigate } from "react-router-dom";
 import { userService } from "../services/user";
 import { useToast } from "@/components/ui/use-toast";
-import { jwtDecode } from 'jwt-decode';
+import { authUtils } from "@/lib/authUtils";
+import { getObjectStorageBaseUrl } from "@/lib/env";
 
 const Dashboard = () => {
+  const objectStorageBaseUrl = getObjectStorageBaseUrl();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [selectedChat, setSelectedChat] = useState(null);
@@ -47,7 +49,7 @@ const Dashboard = () => {
   }, []);
 
   const handleLogout = () => {
-    localStorage.removeItem("jwt_token");
+    authUtils.removeToken();
     navigate("/");
     toast({
       title: "Logged out",
@@ -105,141 +107,107 @@ const Dashboard = () => {
   ]);
 
   if (!currentUser) {
-    return <div className="min-h-screen flex items-center justify-center">Loading user data...</div>; // Or a loading spinner
+    return (
+      <div className="min-h-[calc(100vh-80px)] flex items-center justify-center">
+        <div className="animate-cozy-fade-in text-lg text-muted-foreground">Loading user data...</div>
+      </div>
+    );
   }
 
   return (
-    <div className="min-h-screen gradient-cozy bg-background text-foreground dark:bg-background-dark dark:text-foreground-dark">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-md border-b border-border dark:bg-card-dark/80 dark:border-border-dark">
-        <div className="max-w-7xl mx-auto p-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-4">
-              <div className="flex items-center space-x-2">
-                <MessageCircle className="h-6 w-6 text-accent" />
-                <h1 className="text-2xl font-crimson font-bold">WhatUp</h1>
-              </div>
-              <Coffee className="h-5 w-5 text-muted-foreground" />
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => navigate("/profile")}
-                className="relative"
-              >
-                <User className="h-5 w-5" />
-              </Button>
-              
-              {currentUser.role === "admin" && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => navigate("/admin")}
-                  className="relative"
-                >
-                  <Crown className="h-5 w-5 text-yellow-500" />
-                </Button>
-              )}
-              
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={handleLogout}
-              >
-                <LogOut className="h-5 w-5" />
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto p-4">
-        <div className="grid lg:grid-cols-4 gap-6 h-[calc(100vh-120px)]">
+    <div className="min-h-[calc(100vh-80px)] bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 text-foreground flex flex-col">
+      <div className="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
+        <div className="grid lg:grid-cols-4 gap-8 h-full">
           {/* Sidebar - Chats List */}
-          <div className="lg:col-span-1 space-y-4">
-            <Card className="card-cozy bg-card dark:bg-card-dark text-card-foreground dark:text-card-foreground-dark">
-              <Button size="sm" variant="ghost">
-                <Users className="h-4 w-4" />
-              </Button>
-              <div className="relative mb-4">
-                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                <Input placeholder="Search chats..." className="pl-10" />
-              </div>
-              <div className="space-y-2 max-h-[500px] overflow-y-auto">
-                {chats.map((chat) => (
-                  <div
-                    key={chat.id}
-                    onClick={() => setSelectedChat(chat)}
-                    className={`p-3 rounded-lg cursor-pointer transition-colors ${
-                      selectedChat?.id === chat.id 
-                        ? 'bg-accent/10 border-2 border-accent/20' 
-                        : 'hover:bg-muted/50 border-2 border-transparent'
-                    }`}
-                  >
-                    <div className="flex items-center space-x-3">
-                      <Avatar className="h-10 w-10">
-                        <AvatarImage src="/placeholder.svg" />
-                        <AvatarFallback className="bg-accent/10 text-accent">
-                          {chat.participants.length > 1 ? '👥' : chat.name.slice(0, 2).toUpperCase()}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1 min-w-0">
-                        <div className="flex items-center justify-between">
-                          <span className="font-medium truncate">{chat.name}</span>
-                          {chat.unread > 0 && (
-                            <Badge variant="default" className="text-xs">
-                              {chat.unread}
-                            </Badge>
-                          )}
-                        </div>
-                        <p className="text-sm text-muted-foreground truncate">{chat.lastMessage}</p>
-                        <p className="text-xs text-muted-foreground">{chat.timestamp}</p>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </Card>
+          <aside className="lg:col-span-1 space-y-6">
             {/* User Profile Card */}
-            <Card className="card-cozy bg-card dark:bg-card-dark text-card-foreground dark:text-card-foreground-dark">
-              <div className="flex items-center space-x-3">
-                <Avatar className="h-12 w-12">
-                  <AvatarImage src={currentUser.profileImage} />
-                  <AvatarFallback className="bg-accent/10 text-accent">
+            <Card className="card-cozy animate-cozy-fade-in bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm border border-slate-200 dark:border-slate-700 shadow-xl">
+              <div className="flex items-center space-x-2 py-1 px-2">
+                <Avatar className="h-7 w-7">
+                  <AvatarImage src={currentUser.active_avatar_url ? `${objectStorageBaseUrl}/${currentUser.active_avatar_url}` : "/placeholder.svg"} />
+                  <AvatarFallback className="bg-primary/10 text-primary text-sm">
                     {currentUser.username.slice(0, 2).toUpperCase()}
                   </AvatarFallback>
                 </Avatar>
-                <div className="flex-1">
-                  <div className="flex items-center space-x-2">
-                    <span className="font-medium">@{currentUser.username}</span>
+                <div className="flex-1 min-w-0">
+                  <div className="flex items-center space-x-1">
+                    <span className="font-medium text-sm text-foreground truncate">@{currentUser.username}</span>
                     {currentUser.role === "admin" && (
-                      <Crown className="h-4 w-4 text-yellow-500" />
+                      <Crown className="h-3 w-3 text-destructive" />
                     )}
                   </div>
-                  <p className="text-sm text-muted-foreground">Online</p>
+                  <p className="text-xs text-muted-foreground">Online</p>
                 </div>
               </div>
             </Card>
-          </div>
+            <Card className="card-cozy animate-cozy-fade-in bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm border border-slate-200 dark:border-slate-700 shadow-xl">
+              <div className="flex items-center justify-between mb-4">
+                <h2 className="font-bold text-lg text-foreground">Chats</h2>
+                <Button size="icon" variant="ghost" className="rounded-full">
+                  <Users className="h-5 w-5 text-primary" />
+                </Button>
+              </div>
+              <div className="relative mb-4">
+                <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Input placeholder="Search chats..." className="pl-10 input-cozy" />
+              </div>
+              <div className="space-y-1 max-h-[calc(100vh-200px)] overflow-y-auto">
+                {chats.map((chat) => {
+                  const isSelected = selectedChat?.id === chat.id;
+                  return (
+                    <div
+                      key={chat.id}
+                      onClick={() => setSelectedChat(chat)}
+                      className={`chat-bubble cursor-pointer transition-all animate-cozy-slide-up px-2 py-1 rounded-md
+                        ${isSelected
+                          ? 'bg-primary/10 border-2 border-primary shadow-cozy-lg text-primary-foreground'
+                          : 'hover:bg-muted/60 border border-transparent text-foreground'}
+                      `}
+                      style={{ minHeight: '40px', fontSize: '0.875rem' }}
+                    >
+                      <div className="flex items-center space-x-2">
+                        <Avatar className="h-7 w-7">
+                          <AvatarImage src="/placeholder.svg" />
+                          <AvatarFallback className="bg-accent/10 text-accent text-xs">
+                            {chat.participants.length > 1 ? '👥' : chat.name.slice(0, 2).toUpperCase()}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center justify-between">
+                            <span className={`font-semibold truncate ${isSelected ? 'text-primary' : ''}`}>{chat.name}</span>
+                            {chat.unread > 0 && (
+                                                            <Badge variant="default" className={`text-xs ${isSelected ? 'bg-primary text-primary-foreground' : 'bg-primary/80 text-primary-foreground'}`}>
+                                {chat.unread}
+                              </Badge>
+                            )}
+                          </div>
+                          <p className={`text-xs truncate ${isSelected ? 'text-primary' : 'text-muted-foreground'}`}>{chat.lastMessage}</p>
+                          <p className={`text-xs ${isSelected ? 'text-primary' : 'text-muted-foreground'}`}>{chat.timestamp}</p>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </Card>
+          </aside>
 
           {/* Main Chat Area */}
-          <div className="lg:col-span-3">
+          <main className="lg:col-span-3">
             {selectedChat ? (
-              <Card className="card-cozy h-full flex flex-col bg-card dark:bg-card-dark text-card-foreground dark:text-card-foreground-dark">
+              <Card className="card-cozy h-full flex flex-col bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 shadow-lg animate-cozy-fade-in">
                 {/* Chat Header */}
-                <div className="flex items-center justify-between p-4 border-b border-border">
+                <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800">
                   <div className="flex items-center space-x-3">
                     <Avatar className="h-10 w-10">
                       <AvatarImage src="/placeholder.svg" />
-                      <AvatarFallback className="bg-accent/10 text-accent">
+                      <AvatarFallback className="bg-primary/10 text-primary">
                         {selectedChat.participants.length > 1 ? '👥' : selectedChat.name.slice(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h3 className="font-crimson font-semibold">{selectedChat.name}</h3>
-                      <p className="text-sm text-muted-foreground">
+                      <h3 className="font-semibold text-lg text-foreground">{selectedChat.name}</h3>
+                      <p className="text-xs text-muted-foreground">
                         {selectedChat.participants.length > 1 
                           ? `${selectedChat.participants.length} members` 
                           : 'Online'
@@ -247,14 +215,13 @@ const Dashboard = () => {
                       </p>
                     </div>
                   </div>
-                  
-                  <Button variant="ghost" size="icon">
-                    <Settings className="h-5 w-5" />
+                  <Button variant="ghost" size="icon" className="rounded-full">
+                    <Settings className="h-5 w-5 text-muted-foreground" />
                   </Button>
                 </div>
 
                 {/* Messages */}
-                <div className="flex-1 p-4 overflow-y-auto space-y-4">
+                <div className="flex-1 p-6 overflow-y-auto space-y-4">
                   {messages.map((msg) => (
                     <div
                       key={msg.id}
@@ -263,16 +230,16 @@ const Dashboard = () => {
                       }`}
                     >
                       <div
-                        className={`max-w-[70%] p-3 rounded-lg ${
+                        className={`chat-bubble ${
                           msg.sender === currentUser.username
-                            ? 'bg-accent text-accent-foreground ml-12'
-                            : 'bg-muted mr-12'
+                            ? 'chat-bubble-sent' 
+                            : 'chat-bubble-received'
                         }`}
                       >
                         {msg.sender !== currentUser.username && (
-                          <p className="text-xs font-medium text-accent mb-1">@{msg.sender}</p>
+                          <p className="text-xs font-medium text-primary mb-1">@{msg.sender}</p>
                         )}
-                        <p>{msg.content}</p>
+                        <p className="text-base">{msg.content}</p>
                         <p className="text-xs opacity-70 mt-1">{msg.timestamp}</p>
                       </div>
                     </div>
@@ -280,41 +247,34 @@ const Dashboard = () => {
                 </div>
 
                 {/* Message Input */}
-                <div className="p-4 border-t border-border">
-                  <div className="flex space-x-2">
+                <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-card/80">
+                  <form className="flex space-x-2" onSubmit={e => {e.preventDefault(); setMessage("");}}>
                     <Input
                       placeholder="Type a message..."
                       value={message}
                       onChange={(e) => setMessage(e.target.value)}
-                      onKeyPress={(e) => {
-                        if (e.key === 'Enter') {
-                          // Handle send message
-                          setMessage("");
-                        }
-                      }}
-                      className="flex-1"
+                      className="flex-1 input-cozy"
                     />
-                    <Button className="btn-accent">
-                      <Send className="h-4 w-4" />
+                    <Button type="submit" className="btn-primary rounded-full shadow-cozy">
+                      <Send className="h-5 w-5" />
                     </Button>
-                  </div>
+                  </form>
                 </div>
               </Card>
             ) : (
-              <Card className="card-cozy h-full flex items-center justify-center bg-card dark:bg-card-dark text-card-foreground dark:text-card-foreground-dark">
+              <Card className="card-cozy h-full flex items-center justify-center bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm border border-slate-200 dark:border-slate-700 shadow-xl">
                 <div className="text-center space-y-4">
-                  <Coffee className="h-16 w-16 text-muted-foreground mx-auto" />
+                  <Coffee className="h-16 w-16 text-primary mx-auto animate-cozy-bounce" />
                   <div>
-                    <h3 className="font-crimson text-xl font-semibold mb-2">Welcome to WhatUp!</h3>
-                    <p className="text-muted-foreground">
-                      Select a chat to start the conversation, just like gathering around 
-                      your favorite coffee shop table.
+                    <h3 className="font-bold text-2xl text-foreground mb-2">Welcome to WhatUp!</h3>
+                    <p className="text-muted-foreground text-base">
+                      Select a chat to start the conversation, just like gathering around your favorite coffee shop table.
                     </p>
                   </div>
                 </div>
               </Card>
             )}
-          </div>
+          </main>
         </div>
       </div>
     </div>

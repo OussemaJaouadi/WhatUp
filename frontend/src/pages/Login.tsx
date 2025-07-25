@@ -1,7 +1,6 @@
-
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, MessageCircle, Mail } from "lucide-react";
+import { Eye, EyeOff, MessageCircle, User, Lock, Shield } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -9,12 +8,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { useToast } from "@/hooks/use-toast";
 import { authService } from "@/services/auth";
 import { animate, createScope } from "animejs";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { authUtils } from "@/lib/authUtils";
 
 export default function Login() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [loginType, setLoginType] = useState<'user' | 'admin'>('user');
+  const [identifier, setIdentifier] = useState(""); // email or username
   const { toast } = useToast();
   const navigate = useNavigate();
   const cardRef = useRef<HTMLDivElement>(null);
@@ -39,6 +42,15 @@ export default function Login() {
         duration: 500,
         ease: 'out(2)'
       });
+
+      // Animate login type selector buttons
+      animate('#login-type-selector > button', {
+        scale: [0.95, 1],
+        opacity: [0, 1],
+        delay: (el, i) => i * 100 + 100,
+        duration: 400,
+        easing: 'easeOutExpo'
+      });
     });
 
     return () => scope.current?.revert();
@@ -49,10 +61,11 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      const response = await authService.login(email, password);
+      // For admin, you may want to add a role field or endpoint logic, but for now just pass identifier and password
+      const response = await authService.login(identifier, password);
       
-      if (response.token) {
-        localStorage.setItem("jwt_token", response.token);
+      if (response.access_token) {
+        authUtils.setToken(response.access_token);
         
         animate('.login-card', {
           scale: [1, 1.02, 1],
@@ -89,6 +102,13 @@ export default function Login() {
       title: "Coming Soon! 🚧",
       description: "Google authentication will be available soon. Stay tuned!",
     });
+  };
+
+  // Fix Tabs value type issue
+  const handleTabChange = (value: string) => {
+    if (value === 'user' || value === 'admin') {
+      setLoginType(value);
+    }
   };
 
   return (
@@ -136,25 +156,54 @@ export default function Login() {
               </div>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="form-field space-y-2">
-                <Label htmlFor="email" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Email Address
-                </Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="your@email.com"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  className="h-11 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 rounded-md"
-                  required
-                />
+            {/* Professional login type selector - edgy style */}
+            <div className="mb-8 flex justify-center">
+              <div className="inline-flex bg-slate-100 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 shadow-sm overflow-hidden" id="login-type-selector">
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className={`flex items-center gap-2 px-6 py-3 text-base font-semibold transition-all duration-300 border-r border-slate-300 dark:border-slate-700 ${loginType === 'user' ? 'bg-amber-600 text-white shadow-lg' : 'text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-slate-700'}`}
+                  style={{ boxShadow: loginType === 'user' ? '0 2px 8px rgba(251, 191, 36, 0.15)' : undefined, borderRadius: 0 }}
+                  onClick={() => setLoginType('user')}
+                  id="login-type-user"
+                >
+                  <User className="h-4 w-4 mr-2" /> User
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className={`flex items-center gap-2 px-6 py-3 text-base font-semibold transition-all duration-300 ${loginType === 'admin' ? 'bg-amber-600 text-white shadow-lg' : 'text-amber-700 dark:text-amber-400 hover:bg-amber-50 dark:hover:bg-slate-700'}`}
+                  style={{ boxShadow: loginType === 'admin' ? '0 2px 8px rgba(251, 191, 36, 0.15)' : undefined, borderRadius: 0 }}
+                  onClick={() => setLoginType('admin')}
+                  id="login-type-admin"
+                >
+                  <Shield className="h-4 w-4 mr-2" /> Admin
+                </Button>
               </div>
-              
-              <div className="form-field space-y-2">
+            </div>
+            <form onSubmit={handleSubmit} className="space-y-4">
+              <div className="form-field space-y-2 relative">
+                <Label htmlFor="identifier" className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                  <User className="inline mr-1 h-4 w-4 text-amber-600 dark:text-amber-400" /> Email or Username
+                </Label>
+                <div className="relative">
+                  <Input
+                    id="identifier"
+                    type="text"
+                    placeholder="Email or Username"
+                    value={identifier}
+                    onChange={(e) => setIdentifier(e.target.value)}
+                    className="h-11 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 rounded-md pl-10"
+                    required
+                  />
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400">
+                    <User className="h-4 w-4" />
+                  </span>
+                </div>
+              </div>
+              <div className="form-field space-y-2 relative">
                 <Label htmlFor="password" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Password
+                  <Lock className="inline mr-1 h-4 w-4 text-amber-600 dark:text-amber-400" /> Password
                 </Label>
                 <div className="relative">
                   <Input
@@ -163,9 +212,12 @@ export default function Login() {
                     placeholder="Enter your password"
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className="h-11 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 pr-10 rounded-md"
+                    className="h-11 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 pr-10 pl-10 rounded-md"
                     required
                   />
+                  <span className="absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">
+                    <Lock className="h-4 w-4" />
+                  </span>
                   <Button
                     type="button"
                     variant="ghost"

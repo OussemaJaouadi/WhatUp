@@ -23,6 +23,9 @@ import {
 import { useNavigate } from "react-router-dom";
 import { userService } from "../services/user";
 import { useToast } from "@/components/ui/use-toast";
+import { getObjectStorageBaseUrl } from "@/lib/env";
+
+const objectStorageBaseUrl = getObjectStorageBaseUrl();
 
 const Profile = () => {
   const navigate = useNavigate();
@@ -152,7 +155,7 @@ const Profile = () => {
   };
 
   const handleLogout = () => {
-    localStorage.removeItem("jwt_token");
+    authUtils.removeToken();
     navigate("/");
     toast({
       title: "Logged out",
@@ -208,7 +211,7 @@ const Profile = () => {
           <Card className="card-cozy text-center sticky top-24 bg-card dark:bg-card-dark text-card-foreground dark:text-card-foreground-dark">
               <div className="relative mx-auto w-24 h-24 mb-4">
                 <Avatar className="w-24 h-24 border-4 border-accent/20">
-                  <AvatarImage src={activeProfileImage ? `${import.meta.env.VITE_API_BASE_URL}user/profile-images/${activeProfileImage.id}/data` : "/placeholder.svg"} alt={currentUser.username} />
+                  <AvatarImage src={activeProfileImage ? `${objectStorageBaseUrl}/${activeProfileImage.image_key}` : "/placeholder.svg"} alt={currentUser.username} />
                   <AvatarFallback className="text-2xl font-crimson bg-accent/10 text-accent">
                     {currentUser.username.slice(0, 2).toUpperCase()}
                   </AvatarFallback>
@@ -339,7 +342,7 @@ const Profile = () => {
                         <div key={image.id} className="relative group">
                           <div className="aspect-square rounded-lg overflow-hidden border-2 border-border">
                             <img 
-                              src={`${import.meta.env.VITE_API_BASE_URL}user/profile-images/${image.id}/data`} 
+                              src={`${objectStorageBaseUrl}/${image.image_key}`} 
                               alt="Profile" 
                               className="w-full h-full object-cover"
                             />

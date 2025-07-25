@@ -1,6 +1,6 @@
 import { useState, useEffect, useRef } from "react";
 import { Link, useNavigate } from "react-router-dom";
-import { Eye, EyeOff, MessageCircle, Users } from "lucide-react";
+import { Eye, EyeOff, MessageCircle, Users, User, Mail, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -164,9 +164,9 @@ export default function Register() {
             </div>
 
             <form onSubmit={handleSubmit} className="space-y-4">
-              <div className="form-field space-y-2">
+              <div className="form-field space-y-2 relative">
                 <Label htmlFor="username" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Username
+                  <User className="inline mr-1 h-4 w-4 text-blue-600 dark:text-blue-400" /> Username
                 </Label>
                 <Input
                   id="username"
@@ -174,14 +174,16 @@ export default function Register() {
                   placeholder="Choose a username"
                   value={formData.username}
                   onChange={handleChange}
-                  className="h-11 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 rounded-md"
+                  className="h-11 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 rounded-md pl-10"
                   required
                 />
+                <span className="absolute left-3 top-10 transform -translate-y-1/2 text-slate-400">
+                  <User className="h-4 w-4" />
+                </span>
               </div>
-
-              <div className="form-field space-y-2">
+              <div className="form-field space-y-2 relative">
                 <Label htmlFor="email" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Email Address
+                  <Mail className="inline mr-1 h-4 w-4 text-blue-600 dark:text-blue-400" /> Email Address
                 </Label>
                 <Input
                   id="email"
@@ -190,14 +192,16 @@ export default function Register() {
                   placeholder="your@email.com"
                   value={formData.email}
                   onChange={handleChange}
-                  className="h-11 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 rounded-md"
+                  className="h-11 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 rounded-md pl-10"
                   required
                 />
+                <span className="absolute left-3 top-10 transform -translate-y-1/2 text-slate-400">
+                  <Mail className="h-4 w-4" />
+                </span>
               </div>
-
-              <div className="form-field space-y-2">
+              <div className="form-field space-y-2 relative">
                 <Label htmlFor="password" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Password
+                  <Lock className="inline mr-1 h-4 w-4 text-blue-600 dark:text-blue-400" /> Password
                 </Label>
                 <div className="relative">
                   <Input
@@ -207,9 +211,12 @@ export default function Register() {
                     placeholder="Create a strong password"
                     value={formData.password}
                     onChange={handleChange}
-                    className="h-11 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 pr-10 rounded-md"
+                    className="h-11 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 pr-10 pl-10 rounded-md"
                     required
                   />
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400">
+                    <Lock className="h-4 w-4" />
+                  </span>
                   <Button
                     type="button"
                     variant="ghost"
@@ -225,10 +232,9 @@ export default function Register() {
                   </Button>
                 </div>
               </div>
-
-              <div className="form-field space-y-2">
+              <div className="form-field space-y-2 relative">
                 <Label htmlFor="confirmPassword" className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Confirm Password
+                  <Lock className="inline mr-1 h-4 w-4 text-blue-600 dark:text-blue-400" /> Confirm Password
                 </Label>
                 <div className="relative">
                   <Input
@@ -238,9 +244,12 @@ export default function Register() {
                     placeholder="Confirm your password"
                     value={formData.confirmPassword}
                     onChange={handleChange}
-                    className="h-11 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 pr-10 rounded-md"
+                    className="h-11 bg-white dark:bg-slate-800 border-slate-300 dark:border-slate-600 pr-10 pl-10 rounded-md"
                     required
                   />
+                  <span className="absolute left-3 top-1/2 transform -translate-y-1/2 text-slate-400">
+                    <Lock className="h-4 w-4" />
+                  </span>
                   <Button
                     type="button"
                     variant="ghost"
