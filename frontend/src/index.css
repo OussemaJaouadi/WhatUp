@@ -53,34 +53,34 @@
   }
 
   .dark {
-    /* Dark mode - Modern, desaturated palette */
-    --background: 220 15% 10%; /* Deep charcoal */
-    --foreground: 210 20% 90%; /* Light grey */
+    /* Dark mode - Cozy, warm palette */
+    --background: 240 10% 10%; /* Very dark desaturated blue-grey */
+    --foreground: 40 10% 85%; /* Off-white/light beige */
 
-    --card: 220 15% 14%; /* Slightly lighter charcoal for cards */
-    --card-foreground: 210 20% 90%;
+    --card: 240 10% 14%; /* Slightly lighter background for cards */
+    --card-foreground: 40 10% 85%;
 
-    --popover: 220 15% 14%;
-    --popover-foreground: 210 20% 90%;
+    --popover: 240 10% 14%;
+    --popover-foreground: 40 10% 85%;
 
-    --primary: 200 70% 50%; /* Vibrant blue */
-    --primary-foreground: 220 15% 10%;
+    --primary: 320 29% 40%; /* Deeper, muted plum */
+    --primary-foreground: 40 10% 95%;
 
-    --secondary: 280 30% 40%; /* Muted purple */
-    --secondary-foreground: 210 20% 90%;
+    --secondary: 15 46% 30%; /* Muted vintage brick */
+    --secondary-foreground: 40 10% 95%;
 
-    --muted: 220 10% 20%; /* Darker grey for muted elements */
-    --muted-foreground: 210 10% 60%;
+    --muted: 240 8% 20%; /* Darker grey-brown for muted elements */
+    --muted-foreground: 40 8% 60%;
 
-    --accent: 220 10% 25%; /* Slightly lighter grey for accent */
-    --accent-foreground: 210 20% 90%;
+    --accent: 240 8% 25%; /* Slightly lighter grey-brown for accent */
+    --accent-foreground: 40 10% 85%;
 
-    --destructive: 0 70% 50%; /* Red for destructive actions */
-    --destructive-foreground: 210 20% 90%;
+    --destructive: 0 70% 50%; /* Red for destructive actions (keep standard) */
+    --destructive-foreground: 40 10% 95%;
 
-    --border: 220 10% 25%;
-    --input: 220 10% 25%;
-    --ring: 200 70% 50%;
+    --border: 240 8% 25%;
+    --input: 240 8% 25%;
+    --ring: 320 29% 40%;
   }
 
   * {

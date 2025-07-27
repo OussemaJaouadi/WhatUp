@@ -20,9 +20,16 @@ class User(Base):
     account_confirmed = Column(Boolean, default=False)
     hashed_password = Column(String, nullable=False)
     active_avatar_url = Column(String, nullable=True)
+    bio = Column(String, nullable=True)
 
     images = relationship("UserImage", back_populates="user", cascade="all, delete-orphan")
+
     public_key = Column(String, nullable=True)
+    # Encrypted private key backup fields (for cross-device recovery)
+    encrypted_private_key = Column(String, nullable=True)
+    salt = Column(String, nullable=True)
+    iv = Column(String, nullable=True)
+
     role = Column(Enum(UserRole), default=UserRole.USER, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)
 
@@ -30,6 +37,8 @@ class User(Base):
     messages_received = relationship("Message", foreign_keys="Message.receiver_id", back_populates="receiver")
     groups_created = relationship("Group", back_populates="creator")
     group_memberships = relationship("GroupMember", back_populates="user")
+    conversations_initiated = relationship("Conversation", foreign_keys="Conversation.user1_id", back_populates="user1")
+    conversations_participated = relationship("Conversation", foreign_keys="Conversation.user2_id", back_populates="user2")
 
 
     def __repr__(self):

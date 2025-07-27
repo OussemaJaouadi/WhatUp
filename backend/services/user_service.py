@@ -1,4 +1,5 @@
-from dto.user import UserCreate, User, UserRole, UserLogin, UserAdminEdit
+from typing import Optional
+from dto.user import UserCreate, User, UserRole, UserLogin, UserAdminEdit, UserResponseAdminDto
 from dto.user_image import UserImageResponseDto
 from models.user import User as UserModel
 from models.user_image import UserImage
@@ -14,6 +15,7 @@ from jose import JWTError, jwt
 from core.config import settings
 
 class UserService:
+
     def __init__(self, db_session_factory, s3_handler, image_handler, email_handler):
         self.db_session_factory = db_session_factory
         self.s3 = s3_handler
@@ -56,8 +58,7 @@ class UserService:
             return User.model_validate(user)
 
     async def login_user(self, user_login: UserLogin) -> TokenData:
-        session = self.db_session_factory()
-        try:
+        async with self.db_session_factory() as session:
             user = None
             # Try to find user by username
             result = await session.execute(select(UserModel).where(UserModel.username == user_login.username))
@@ -76,7 +77,7 @@ class UserService:
 
             if not user or not self.pwd_context.verify(user_login.password, user.hashed_password):
                 raise ValueError("Invalid credentials")
-            
+
             # Calculate expiration time for the token
             expiration_period_str = settings.JWT_EXPIRATION_PERIOD
             if expiration_period_str.endswith('h'):
@@ -87,11 +88,9 @@ class UserService:
                 expire = datetime.now(timezone.utc) + timedelta(minutes=minutes)
             else:
                 expire = datetime.now(timezone.utc) + timedelta(minutes=30)
-            
+
             token_payload = TokenPayload(sub=user.id, role=user.role.value, exp=int(expire.timestamp()))
             return await create_access_token(token_payload)
-        finally:
-            await session.close()
 
     async def get_me(self, user_id: str) -> User:
         async with self.db_session_factory() as session:
@@ -100,6 +99,19 @@ class UserService:
             if not user:
                 raise ValueError("User not found")
             return User.model_validate(user)
+
+    async def get_user_by_id(self, user_id: str):
+        """
+        Admin: Get user by ID, return UserResponseAdminDto
+        """
+        async with self.db_session_factory() as session:
+            result = await session.execute(select(UserModel).where(UserModel.id == user_id))
+            user = result.scalar_one_or_none()
+            if not user:
+                raise ValueError("User not found")
+            # Convert SQLAlchemy model to dict, excluding private attributes
+            data = {k: v for k, v in user.__dict__.items() if not k.startswith('_')}
+            return UserResponseAdminDto.model_validate(data)
 
     async def _add_profile_picture(self, session, user: UserModel, image_bytes: bytes, is_active: bool = False) -> UserImage:
         processed = await self.image_handler.process_image(image_bytes)
@@ -269,6 +281,14 @@ class UserService:
             users = result.scalars().all()
             return [User.model_validate(u) for u in users]
 
+    async def get_user_by_username(self, username: str) -> User:
+        async with self.db_session_factory() as session:
+            result = await session.execute(select(UserModel).where(UserModel.username == username))
+            user = result.scalar_one_or_none()
+            if not user:
+                raise ValueError("User not found")
+            return User.model_validate(user)
+
     async def admin_edit_user(self, user_id: str, user_data: UserAdminEdit, image_bytes: bytes = None) -> User:
         async with self.db_session_factory() as session:
             result = await session.execute(select(UserModel).where(UserModel.id == user_id))
@@ -283,8 +303,19 @@ class UserService:
 
             # Iterate over provided fields in the DTO and update the user model
             for key, value in user_data.model_dump(exclude_unset=True).items():
-                if hasattr(user, key):
+                if value is not None and hasattr(user, key):
                     setattr(user, key, value)
+            await session.commit()
+            await session.refresh(user)
+            return User.model_validate(user)
+
+    async def update_user_bio(self, user_id: str, bio: Optional[str]) -> User:
+        async with self.db_session_factory() as session:
+            result = await session.execute(select(UserModel).where(UserModel.id == user_id))
+            user = result.scalar_one_or_none()
+            if not user:
+                raise ValueError("User not found")
+            user.bio = bio
             await session.commit()
             await session.refresh(user)
             return User.model_validate(user)
@@ -357,7 +388,7 @@ class UserService:
             user = result.scalar_one_or_none()
             if not user:
                 raise ValueError("User not found")
-            user.is_confirmed = True
+            user.account_confirmed = True
             await session.commit()
             await self.email_handler.send_to_person(
                 to=user.email,
@@ -376,10 +407,44 @@ class UserService:
             user.public_key = public_key
             await session.commit()
 
-    async def get_public_key(self, user_id: str) -> str:
+    async def get_public_key_for_encryption(self, user_id: str) -> str:
         async with self.db_session_factory() as session:
             result = await session.execute(select(UserModel).where(UserModel.id == user_id))
             user = result.scalar_one_or_none()
             if not user:
                 raise ValueError("User not found")
+            if not user.public_key:
+                raise ValueError("User does not have a public key")
             return user.public_key
+    async def set_private_key_backup(self, user_id: str, backup_data: dict) -> None:
+        """
+        Store encrypted private key backup for the user.
+        backup_data: { encrypted_private_key, salt, iv }
+        """
+        async with self.db_session_factory() as session:
+            result = await session.execute(select(UserModel).where(UserModel.id == user_id))
+            user = result.scalar_one_or_none()
+            if not user:
+                raise ValueError("User not found")
+            user.encrypted_private_key = backup_data.get("encrypted_private_key")
+            user.salt = backup_data.get("salt")
+            user.iv = backup_data.get("iv")
+            await session.commit()
+
+    async def get_private_key_backup(self, user_id: str) -> Optional[dict]:
+        """
+        Retrieve encrypted private key backup for the user.
+        Returns: { encrypted_private_key, salt, iv } or None
+        """
+        async with self.db_session_factory() as session:
+            result = await session.execute(select(UserModel).where(UserModel.id == user_id))
+            user = result.scalar_one_or_none()
+            if not user:
+                raise ValueError("User not found")
+            if not user.encrypted_private_key or not user.salt or not user.iv:
+                return None
+            return {
+                "encrypted_private_key": user.encrypted_private_key,
+                "salt": user.salt,
+                "iv": user.iv
+            }

@@ -21,7 +21,7 @@ export default function Login() {
   const { toast } = useToast();
   const navigate = useNavigate();
   const cardRef = useRef<HTMLDivElement>(null);
-  const scope = useRef<any>(null);
+  const scope = useRef<ReturnType<typeof createScope> | null>(null);
 
   useEffect(() => {
     if (!cardRef.current) return;
@@ -80,7 +80,7 @@ export default function Login() {
           }
         });
       }
-    } catch (error: any) {
+    } catch (error) {
       animate('.login-card', {
         translateX: [-6, 6, -4, 4, -2, 2, 0],
         duration: 400,

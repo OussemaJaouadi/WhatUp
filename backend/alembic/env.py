@@ -24,6 +24,14 @@ sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 from core.config import settings
 from core.database import Base
 
+# Import all models here to ensure they are registered with Base.metadata
+from models.user import User
+from models.message import Message
+from models.group import Group
+from models.group_member import GroupMember
+from models.user_image import UserImage
+from models.conversation import Conversation
+
 # add your model's MetaData object here
 # for 'autogenerate' support
 target_metadata = Base.metadata

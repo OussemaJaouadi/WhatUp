@@ -12,29 +12,42 @@ import {
   Send,
   Coffee,
   Crown,
-  User,
+  User as UserIcon,
   LogOut
 } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { userService } from "../services/user";
+import { conversationService } from "../services/conversation";
+import { messageService } from "../services/message";
 import { useToast } from "@/components/ui/use-toast";
 import { authUtils } from "@/lib/authUtils";
 import { getObjectStorageBaseUrl } from "@/lib/env";
+import { ConversationResponseDto } from "@/types/conversation";
+import { Message } from "@/types/message";
+import { UserResponseDto } from "@/types/user";
+import { encryptMessage, decryptMessage } from "@/lib/cryptoUtils";
+import { keyStorage } from "@/lib/keyStorage";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
 
 const Dashboard = () => {
   const objectStorageBaseUrl = getObjectStorageBaseUrl();
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [selectedChat, setSelectedChat] = useState(null);
+  const [selectedChat, setSelectedChat] = useState<ConversationResponseDto | null>(null);
   const [message, setMessage] = useState("");
-  const [currentUser, setCurrentUser] = useState<any>(null);
+  const [currentUser, setCurrentUser] = useState<UserResponseDto | null>(null);
+  const [chats, setChats] = useState<ConversationResponseDto[]>([]);
+  const [messages, setMessages] = useState<Message[]>([]);
+  const [userNamesMap, setUserNamesMap] = useState<Record<string, string>>({});
+  const [isEncrypted, setIsEncrypted] = useState(false);
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
         const user = await userService.getMe();
         setCurrentUser(user);
-      } catch (error: any) {
+      } catch (error) {
         toast({
           title: "Error fetching user data",
           description: error.response?.data?.detail || "An unexpected error occurred.",
@@ -45,8 +58,69 @@ const Dashboard = () => {
       }
     };
 
+    const fetchConversations = async () => {
+      try {
+        const userConversations = await conversationService.getMyConversations();
+        setChats(userConversations);
+
+        const newUserNamesMap: Record<string, string> = {};
+        for (const conversation of userConversations) {
+          const otherUserId = conversation.user1_id === currentUser.id ? conversation.user2_id : conversation.user1_id;
+          if (!newUserNamesMap[otherUserId]) {
+            const user = await userService.getUserById(otherUserId);
+            newUserNamesMap[otherUserId] = user.username;
+          }
+        }
+        setUserNamesMap(newUserNamesMap);
+
+      } catch (error) {
+        toast({
+          title: "Error fetching conversations",
+          description: error.response?.data?.detail || "An unexpected error occurred.",
+          variant: "destructive",
+        });
+      }
+    };
+
     fetchCurrentUser();
+    fetchConversations();
   }, []);
+
+  useEffect(() => {
+    const fetchMessages = async () => {
+      if (selectedChat) {
+        try {
+          const conversationMessages = await messageService.getConversationMessages(selectedChat.id);
+          const decryptedMessages = await Promise.all(conversationMessages.map(async (msg) => {
+            let displayedContent = msg.content;
+            if (msg.is_encrypted) {
+              const privateKey = localStorage.getItem('privateKey');
+              if (privateKey) {
+                try {
+                  displayedContent = await decryptMessage(privateKey, msg.content);
+                } catch (e) {
+                  console.error("Decryption failed:", e);
+                  displayedContent = "[Encrypted message - decryption failed]";
+                }
+              } else {
+                displayedContent = "[Encrypted message - private key not found]";
+              }
+            }
+            return { ...msg, content: displayedContent };
+          }));
+          setMessages(decryptedMessages);
+        } catch (error) {
+          toast({
+            title: "Error fetching messages",
+            description: error.response?.data?.detail || "An unexpected error occurred.",
+            variant: "destructive",
+          });
+        }
+      }
+    };
+
+    fetchMessages();
+  }, [selectedChat]);
 
   const handleLogout = () => {
     authUtils.removeToken();
@@ -56,55 +130,8 @@ const Dashboard = () => {
       description: "You have been successfully logged out.",
     });
   };
-  
-  // Mock data - replace with actual API calls
-  const [chats] = useState([
-    {
-      id: "1",
-      name: "MacLaren's Gang",
-      lastMessage: "Hey, anyone up for drinks tonight?",
-      timestamp: "2 min ago",
-      unread: 3,
-      participants: ["ted_mosby", "barney_stinson", "robin_scherbatsky", "lily_aldrin", "marshall_eriksen"]
-    },
-    {
-      id: "2", 
-      name: "Barney Stinson",
-      lastMessage: "Suit up! 🤵",
-      timestamp: "15 min ago",
-      unread: 1,
-      participants: ["barney_stinson"]
-    },
-    {
-      id: "3",
-      name: "Robin Scherbatsky", 
-      lastMessage: "Thanks for the help earlier",
-      timestamp: "1 hour ago",
-      unread: 0,
-      participants: ["robin_scherbatsky"]
-    }
-  ]);
 
-  const [messages] = useState([
-    {
-      id: "1",
-      sender: "barney_stinson",
-      content: "Hey Ted! How's the architecture project going?",
-      timestamp: "10:30 AM"
-    },
-    {
-      id: "2", 
-      sender: "ted_mosby",
-      content: "It's coming along well! The client loves the sustainable design elements.",
-      timestamp: "10:32 AM"
-    },
-    {
-      id: "3",
-      sender: "barney_stinson", 
-      content: "That's awesome! We should celebrate at MacLaren's tonight.",
-      timestamp: "10:33 AM"
-    }
-  ]);
+
 
   if (!currentUser) {
     return (
@@ -115,32 +142,12 @@ const Dashboard = () => {
   }
 
   return (
-    <div className="min-h-[calc(100vh-80px)] bg-gradient-to-br from-slate-50 via-blue-50 to-indigo-50 dark:from-slate-900 dark:via-slate-800 dark:to-slate-900 text-foreground flex flex-col">
+    <div className="min-h-[calc(100vh-80px)] gradient-cozy dark:bg-[#181926] text-foreground flex flex-col">
       <div className="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
         <div className="grid lg:grid-cols-4 gap-8 h-full">
           {/* Sidebar - Chats List */}
           <aside className="lg:col-span-1 space-y-6">
-            {/* User Profile Card */}
-            <Card className="card-cozy animate-cozy-fade-in bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm border border-slate-200 dark:border-slate-700 shadow-xl">
-              <div className="flex items-center space-x-2 py-1 px-2">
-                <Avatar className="h-7 w-7">
-                  <AvatarImage src={currentUser.active_avatar_url ? `${objectStorageBaseUrl}/${currentUser.active_avatar_url}` : "/placeholder.svg"} />
-                  <AvatarFallback className="bg-primary/10 text-primary text-sm">
-                    {currentUser.username.slice(0, 2).toUpperCase()}
-                  </AvatarFallback>
-                </Avatar>
-                <div className="flex-1 min-w-0">
-                  <div className="flex items-center space-x-1">
-                    <span className="font-medium text-sm text-foreground truncate">@{currentUser.username}</span>
-                    {currentUser.role === "admin" && (
-                      <Crown className="h-3 w-3 text-destructive" />
-                    )}
-                  </div>
-                  <p className="text-xs text-muted-foreground">Online</p>
-                </div>
-              </div>
-            </Card>
-            <Card className="card-cozy animate-cozy-fade-in bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm border border-slate-200 dark:border-slate-700 shadow-xl">
+            <Card className="card-cozy animate-cozy-fade-in bg-card/90 dark:bg-[#23243a] backdrop-blur-sm border border-border/70 dark:border-transparent shadow-cozy dark:shadow-[0_2px_16px_0_rgba(0,0,0,0.30)] transition-colors">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="font-bold text-lg text-foreground">Chats</h2>
                 <Button size="icon" variant="ghost" className="rounded-full">
@@ -154,35 +161,33 @@ const Dashboard = () => {
               <div className="space-y-1 max-h-[calc(100vh-200px)] overflow-y-auto">
                 {chats.map((chat) => {
                   const isSelected = selectedChat?.id === chat.id;
+                  const otherUserId = chat.user1_id === currentUser.id ? chat.user2_id : chat.user1_id;
+                  const chatName = userNamesMap[otherUserId] || "Loading...";
                   return (
                     <div
                       key={chat.id}
                       onClick={() => setSelectedChat(chat)}
-                      className={`chat-bubble cursor-pointer transition-all animate-cozy-slide-up px-2 py-1 rounded-md
+                      className={`flex items-center gap-2 px-3 py-2 rounded-lg cursor-pointer transition-all animate-cozy-slide-up mb-1
                         ${isSelected
-                          ? 'bg-primary/10 border-2 border-primary shadow-cozy-lg text-primary-foreground'
-                          : 'hover:bg-muted/60 border border-transparent text-foreground'}
+                          ? 'bg-primary/15 shadow-cozy dark:bg-[#2a2b3d] dark:shadow-[0_2px_12px_0_rgba(255,255,0,0.08)]'
+                          : 'bg-card/80 hover:bg-muted/60 dark:bg-[#23243a] dark:hover:bg-[#23243a]/80 dark:text-slate-100 dark:shadow-[0_1px_4px_0_rgba(0,0,0,0.18)]'}
                       `}
-                      style={{ minHeight: '40px', fontSize: '0.875rem' }}
+                      style={{ minHeight: '38px', fontSize: '0.97rem' }}
                     >
-                      <div className="flex items-center space-x-2">
-                        <Avatar className="h-7 w-7">
-                          <AvatarImage src="/placeholder.svg" />
-                          <AvatarFallback className="bg-accent/10 text-accent text-xs">
-                            {chat.participants.length > 1 ? '👥' : chat.name.slice(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center justify-between">
-                            <span className={`font-semibold truncate ${isSelected ? 'text-primary' : ''}`}>{chat.name}</span>
-                            {chat.unread > 0 && (
-                                                            <Badge variant="default" className={`text-xs ${isSelected ? 'bg-primary text-primary-foreground' : 'bg-primary/80 text-primary-foreground'}`}>
-                                {chat.unread}
-                              </Badge>
-                            )}
-                          </div>
-                          <p className={`text-xs truncate ${isSelected ? 'text-primary' : 'text-muted-foreground'}`}>{chat.lastMessage}</p>
-                          <p className={`text-xs ${isSelected ? 'text-primary' : 'text-muted-foreground'}`}>{chat.timestamp}</p>
+                      <Avatar className={`h-7 w-7 min-w-[28px] min-h-[28px] shadow-sm ${isSelected ? 'ring-2 ring-primary/60 dark:ring-primary' : ''}`}>
+                        <AvatarImage src="/placeholder.svg" />
+                        <AvatarFallback className="bg-accent/10 text-accent text-xs dark:bg-slate-700 dark:text-slate-200">
+                          {chatName.slice(0, 2).toUpperCase()}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center justify-between">
+                          <span className={`font-semibold truncate ${isSelected ? 'text-primary dark:text-primary' : 'dark:text-slate-100'}`}>{chatName}</span>
+                          {/* Unread badge can be implemented later if backend provides unread count */}
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <p className={`text-[12px] truncate ${isSelected ? 'text-primary dark:text-primary' : 'text-muted-foreground dark:text-slate-300'}`}>{"lastMessage" in chat ? (chat.lastMessage as string) : "No messages yet"}</p>
+                          <span className="text-[10px] text-muted-foreground ml-2 whitespace-nowrap dark:text-slate-400">{new Date(chat.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                         </div>
                       </div>
                     </div>
@@ -195,23 +200,20 @@ const Dashboard = () => {
           {/* Main Chat Area */}
           <main className="lg:col-span-3">
             {selectedChat ? (
-              <Card className="card-cozy h-full flex flex-col bg-white/95 dark:bg-slate-900/95 border border-slate-200 dark:border-slate-800 shadow-lg animate-cozy-fade-in">
+              <Card className="card-cozy h-full flex flex-col bg-card/95 dark:bg-[#23243a] border border-border/70 dark:border-transparent shadow-cozy-lg dark:shadow-[0_4px_32px_0_rgba(0,0,0,0.35)] animate-cozy-fade-in transition-colors">
                 {/* Chat Header */}
                 <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800">
                   <div className="flex items-center space-x-3">
                     <Avatar className="h-10 w-10">
                       <AvatarImage src="/placeholder.svg" />
                       <AvatarFallback className="bg-primary/10 text-primary">
-                        {selectedChat.participants.length > 1 ? '👥' : selectedChat.name.slice(0, 2).toUpperCase()}
+                        {selectedChat.user1_id === currentUser.id ? userNamesMap[selectedChat.user2_id]?.slice(0, 2).toUpperCase() : userNamesMap[selectedChat.user1_id]?.slice(0, 2).toUpperCase()}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h3 className="font-semibold text-lg text-foreground">{selectedChat.name}</h3>
+                      <h3 className="font-semibold text-lg text-foreground">{selectedChat.user1_id === currentUser.id ? userNamesMap[selectedChat.user2_id] : userNamesMap[selectedChat.user1_id]}</h3>
                       <p className="text-xs text-muted-foreground">
-                        {selectedChat.participants.length > 1 
-                          ? `${selectedChat.participants.length} members` 
-                          : 'Online'
-                        }
+                        Online
                       </p>
                     </div>
                   </div>
@@ -221,34 +223,85 @@ const Dashboard = () => {
                 </div>
 
                 {/* Messages */}
-                <div className="flex-1 p-6 overflow-y-auto space-y-4">
+                <div className="flex-1 p-4 sm:p-6 overflow-y-auto flex flex-col gap-4">
                   {messages.map((msg) => (
                     <div
                       key={msg.id}
-                      className={`flex ${
-                        msg.sender === currentUser.username ? 'justify-end' : 'justify-start'
-                      }`}
+                      className={`flex w-full ${msg.sender_id === currentUser.id ? 'justify-end' : 'justify-start'}`}
                     >
                       <div
-                        className={`chat-bubble ${
-                          msg.sender === currentUser.username
-                            ? 'chat-bubble-sent' 
-                            : 'chat-bubble-received'
-                        }`}
+                        className={`flex flex-col rounded-xl px-4 py-2 max-w-[75%] break-words shadow-md transition-all duration-300 ease-in-out
+                          ${msg.sender_id === currentUser.id
+                            ? 'bg-primary text-primary-foreground rounded-br-none self-end animate-cozy-slide-up'
+                            : 'bg-card text-foreground rounded-bl-none self-start animate-cozy-fade-in'}'
+                        `}
+                        style={{ fontSize: '0.95rem', lineHeight: 1.4 }}
                       >
-                        {msg.sender !== currentUser.username && (
-                          <p className="text-xs font-medium text-primary mb-1">@{msg.sender}</p>
+                        {msg.sender_id !== currentUser.id && (
+                          <span className="block text-xs font-semibold text-primary-foreground/80 dark:text-primary-foreground/80 mb-1">@{userNamesMap[msg.sender_id] || "Unknown User"}</span>
                         )}
-                        <p className="text-base">{msg.content}</p>
-                        <p className="text-xs opacity-70 mt-1">{msg.timestamp}</p>
+                        <span className="block text-balance">{msg.content}</span>
+                        <span className={`block text-[10px] mt-1 ${msg.sender_id === currentUser.id ? 'text-primary-foreground/70 text-right' : 'text-muted-foreground text-left'}`}>{new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}</span>
                       </div>
                     </div>
                   ))}
                 </div>
 
                 {/* Message Input */}
-                <div className="p-4 border-t border-slate-200 dark:border-slate-800 bg-card/80">
-                  <form className="flex space-x-2" onSubmit={e => {e.preventDefault(); setMessage("");}}>
+                <div className="p-4 border-t border-border/50 bg-card/80">
+                  <div className="flex items-center justify-end mb-2">
+                    <Label htmlFor="e2e-encryption" className="mr-2 text-sm">End-to-End Encryption</Label>
+                    <Switch
+                      id="e2e-encryption"
+                      checked={isEncrypted}
+                      onCheckedChange={setIsEncrypted}
+                    />
+                  </div>
+                  <form
+                    className="flex space-x-2"
+                    onSubmit={async (e) => {
+                      e.preventDefault();
+                      if (!message.trim() || !selectedChat || !currentUser) return;
+
+                      try {
+                        let contentToSend = message;
+                        let encryptedStatus = isEncrypted;
+
+                        if (isEncrypted) {
+                          const otherUserId = selectedChat.user1_id === currentUser.id ? selectedChat.user2_id : selectedChat.user1_id;
+                          const recipientPublicKeyResponse = await userService.getPublicKey(otherUserId);
+                          const recipientPublicKey = recipientPublicKeyResponse.public_key;
+
+                          if (!recipientPublicKey) {
+                            toast({
+                              title: "Encryption Failed",
+                              description: "Recipient's public key not found. Cannot send encrypted message.",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
+                          const encrypted = await encryptMessage(recipientPublicKey, message);
+                          contentToSend = encrypted;
+                        }
+
+                        const newMessage = await messageService.sendMessage(
+                          currentUser.id,
+                          selectedChat.participant_ids.find(id => id !== currentUser.id),
+                          selectedChat.id,
+                          contentToSend,
+                          encryptedStatus
+                        );
+                        addMessage(newMessage);
+                        setMessage("");
+                      } catch (error) {
+                        toast({
+                          title: "Error sending message",
+                          description: error.response?.data?.detail || "An unexpected error occurred.",
+                          variant: "destructive",
+                        });
+                      }
+                    }}
+                  >
                     <Input
                       placeholder="Type a message..."
                       value={message}
@@ -262,7 +315,7 @@ const Dashboard = () => {
                 </div>
               </Card>
             ) : (
-              <Card className="card-cozy h-full flex items-center justify-center bg-white/95 dark:bg-slate-800/95 backdrop-blur-sm border border-slate-200 dark:border-slate-700 shadow-xl">
+              <Card className="card-cozy h-full flex items-center justify-center bg-card/90 dark:bg-[#23243a] backdrop-blur-sm border border-border/70 dark:border-transparent shadow-cozy">
                 <div className="text-center space-y-4">
                   <Coffee className="h-16 w-16 text-primary mx-auto animate-cozy-bounce" />
                   <div>

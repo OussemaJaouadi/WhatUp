@@ -1,7 +1,10 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Navigate, Outlet } from 'react-router-dom';
-import { DecodedToken } from '@/types/auth';
 import { authUtils } from '@/lib/authUtils';
+import { websocketService } from '@/services/websocket';
+import { WebSocketMessagePayload } from '@/types/message';
+import { useMessages } from '@/hooks/useMessages';
+import { getApiBaseUrl } from '@/lib/env';
 
 interface ProtectedRouteProps {
   allowedRoles?: string[];
@@ -16,20 +19,24 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
 
   try {
     const decodedToken = authUtils.decodeToken(token);
-    if (!decodedToken) {
-      throw new Error("Invalid token");
+    if (!decodedToken || typeof decodedToken.role !== "string" || !decodedToken.sub) {
+      throw new Error("Invalid token or missing role/user ID");
     }
-    const userRole = decodedToken.role; // Assuming your JWT has a 'role' claim
+    const userRole = decodedToken.role;
+    const userId = decodedToken.sub;
+    const backendUrl = getApiBaseUrl();
+    const { messages, sendMessage } = useMessages({ userId, jwt: token, backendUrl });
+
+    // TODO: Handle messages or sendMessage as needed for WebSocket events
 
     if (allowedRoles && !allowedRoles.includes(userRole)) {
-      // User does not have the required role, redirect to an unauthorized page or dashboard
       return <Navigate to="/dashboard" replace />;
     }
 
     return <Outlet />;
   } catch (error) {
     console.error("Invalid token:", error);
-    authUtils.removeToken(); // Clear invalid token
+    authUtils.removeToken();
     return <Navigate to="/" replace />;
   }
 };

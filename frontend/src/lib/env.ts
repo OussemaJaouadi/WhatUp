@@ -4,7 +4,7 @@ export const getObjectStorageBaseUrl = (): string => {
     console.warn("VITE_OBJECT_STORAGE_BASE_URL is not defined. Please check your .env file.");
     return ""; // Or throw an error, depending on desired behavior
   }
-  return url;
+  return url.replace(/\/+$/, '');
 };
 
 export const getApiBaseUrl = (): string => {
@@ -13,5 +13,5 @@ export const getApiBaseUrl = (): string => {
     console.warn("VITE_API_BASE_URL is not defined. Please check your .env file.");
     return ""; // Or throw an error, depending on desired behavior
   }
-  return url;
+  return url.replace(/\/+$/, '');
 }

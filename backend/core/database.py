@@ -4,7 +4,7 @@ from core.config import settings
 
 DATABASE_URL = f"postgresql+asyncpg://{settings.PGUSER}:{settings.PGPASSWORD}@{settings.PGHOST}/{settings.PGDATABASE}"
 
-engine = create_async_engine(DATABASE_URL, echo=True)
+engine = create_async_engine(DATABASE_URL, echo=False)
 
 AsyncSessionLocal = sessionmaker(
     autocommit=False,

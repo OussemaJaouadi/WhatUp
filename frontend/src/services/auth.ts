@@ -1,4 +1,7 @@
 import { api } from './api';
+import { generateKeyPair } from '@/lib/cryptoUtils';
+import { keyStorage } from '@/lib/keyStorage';
+import { userService } from './user';
 
 export const authService = {
   login: async (username, password) => {
@@ -7,6 +10,9 @@ export const authService = {
   },
 
   register: async (userData) => {
+    const keyPair = await generateKeyPair();
+    localStorage.setItem('privateKey', keyPair.privateKey); // Store private key securely
+
     const formData = new FormData();
     for (const key in userData) {
       if (userData[key] !== undefined) {
@@ -23,6 +29,12 @@ export const authService = {
         'Content-Type': 'multipart/form-data',
       },
     });
+
+    // After successful registration, store the private key and update the public key
+    const userId = response.data.id; // Assuming the response contains the user ID
+    await keyStorage.savePrivateKey(userId, keyPair.privateKey);
+    await userService.updatePublicKey(keyPair.publicKey);
+
     return response.data;
   },
 

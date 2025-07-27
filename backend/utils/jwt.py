@@ -1,3 +1,6 @@
+from fastapi import WebSocket, HTTPException, status
+from jose import JWTError
+from dto.token import TokenPayload
 from datetime import datetime, timedelta, timezone
 from typing import Union, Any
 from uuid import UUID
@@ -8,6 +11,28 @@ from core.config import settings
 SECRET_KEY = settings.JWT_SECRET_KEY
 CONFIRMATION_SECRET_KEY = settings.JWT_ACCOUNT_CONFIRMATION
 ALGORITHM = "HS256"
+ # from utils.jwt import verify_token  # Removed to fix circular import
+
+async def get_current_user_ws(websocket: WebSocket) -> TokenPayload:
+    try:
+        token = websocket.query_params.get("token")
+        if not token:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Not authenticated: Missing token",
+            )
+        payload = await verify_token(token)
+        if not payload:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Could not validate credentials",
+            )
+        return payload
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+        )
 
 async def generate_account_confirmation_token(
     user_id: Any,
@@ -95,9 +120,47 @@ async def verify_token(token: str) -> Union[TokenPayload, None]:
     except JWTError:
         return None
 
+from fastapi import Request, HTTPException, status
+
 async def decode_jwt(token: str) -> TokenPayload:
     """
     Decodes a JWT and returns the payload as a TokenPayload. Raises JWTError if invalid.
     """
     payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
     return TokenPayload(**payload)
+
+async def get_current_user(request: Request) -> TokenPayload:
+    token = request.headers.get("Authorization")
+    if not token:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Not authenticated: Missing token",
+            headers={"Authorization": "Bearer"},
+        )
+    try:
+        scheme, credentials = token.split(" ")
+        if scheme.lower() != "bearer":
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Invalid authentication scheme",
+                headers={"Authorization": "Bearer"},
+            )
+        payload = await verify_token(credentials)
+        if not payload:
+            raise HTTPException(
+                status_code=status.HTTP_401_UNAUTHORIZED,
+                detail="Could not validate credentials",
+                headers={"Authorization": "Bearer"},
+            )
+        return payload
+    except ValueError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Invalid token format",
+            headers={"Authorization": "Bearer"},
+        )
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Could not validate credentials",
+        )

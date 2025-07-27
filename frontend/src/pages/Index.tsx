@@ -8,7 +8,7 @@ export default function Index() {
   const heroRef = useRef<HTMLDivElement>(null);
   const featuresRef = useRef<HTMLDivElement>(null);
   const ctaRef = useRef<HTMLDivElement>(null);
-  const scope = useRef<any>(null);
+  const scope = useRef<ReturnType<typeof createScope> | null>(null);
 
   useEffect(() => {
     if (!heroRef.current) return;

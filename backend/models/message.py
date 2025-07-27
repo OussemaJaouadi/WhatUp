@@ -12,13 +12,17 @@ class Message(Base):
     sender_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=False)
     receiver_id = Column(UUID(as_uuid=True), ForeignKey("users.id"), nullable=True) # For private messages
     group_id = Column(UUID(as_uuid=True), ForeignKey("groups.id"), nullable=True) # For group messages
+    conversation_id = Column(UUID(as_uuid=True), ForeignKey("conversations.id"), nullable=True) # For direct messages
     content = Column(String, nullable=False)
     is_encrypted = Column(Boolean, default=False)
+    is_read = Column(Boolean, default=False)  # Simple direct message read status
+    is_deleted_for_all = Column(Boolean, default=False)  # For unsend
     created_at = Column(DateTime, default=datetime.utcnow)
 
     sender = relationship("User", foreign_keys=[sender_id], back_populates="messages_sent")
     receiver = relationship("User", foreign_keys=[receiver_id], back_populates="messages_received")
     group = relationship("Group", back_populates="messages")
+    conversation = relationship("Conversation", back_populates="messages")
 
     def __repr__(self):
         return f"<Message(id='{self.id}', sender_id='{self.sender_id}')>"

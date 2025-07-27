@@ -1,177 +1,189 @@
-import { useState, useEffect, useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Users, Crown, CheckCircle, XCircle, Settings, Shield, Edit3, Upload, Eye, User as UserIcon } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
-import { Badge } from "@/components/ui/badge";
-import { Separator } from "@/components/ui/separator";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { 
-  Shield, 
-  Users, 
-  Trash2,
-  Edit3,
-  Search,
-  UserPlus,
-  Settings,
-  MessageCircle,
-  Crown,
-  CheckCircle,
-  XCircle,
-  Upload
-} from "lucide-react";
-import { useNavigate } from "react-router-dom";
-import { userService } from "../services/user";
-import { useToast } from "@/components/ui/use-toast";
-import { UserResponseAdminDto } from '@/types/user';
-import { UserImageResponseDto } from '@/types/userImage';
-import { authUtils } from "@/lib/authUtils";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { UserResponseAdminDto, UserRole, UserAdminEdit } from "@/types/user";
+import { UserImageResponseDto } from "@/types/userImage";
+import { EditUserModalProps, ViewUserModalProps } from "@/types/modal";
+import { userService } from "@/services/user";
 import { getObjectStorageBaseUrl } from "@/lib/env";
+import EditUserModal from "@/components/modals/EditUserModal";
+import ViewUserModal from "@/components/modals/ViewUserModal";
+import { authUtils } from "@/lib/authUtils";
 
-const objectStorageBaseUrl = getObjectStorageBaseUrl();
+
 
 const Admin = () => {
+  const objectStorageBaseUrl = getObjectStorageBaseUrl();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState("users");
-  const [searchTerm, setSearchTerm] = useState("");
   const [users, setUsers] = useState<UserResponseAdminDto[]>([]);
+  const [searchQuery, setSearchQuery] = useState<string>("");
   const [selectedUser, setSelectedUser] = useState<UserResponseAdminDto | null>(null);
-  const [editRole, setEditRole] = useState("");
-  const [editAccountConfirmed, setEditAccountConfirmed] = useState<boolean | string>("");
+  const [viewUser, setViewUser] = useState<UserResponseAdminDto | null>(null);
+  const [editRole, setEditRole] = useState<UserRole>("user");
+  const [editAccountConfirmed, setEditAccountConfirmed] = useState<boolean>(false);
   const [editProfileImage, setEditProfileImage] = useState<File | null>(null);
+  const [editBio, setEditBio] = useState<string | null>(null);
   const [selectedUserProfileImages, setSelectedUserProfileImages] = useState<UserImageResponseDto[]>([]);
+  const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
-  // Fix: Add missing handler stubs
-  const handleDeleteUser = (userId: string) => {
-    // TODO: Implement user deletion logic
+
+const fetchUsers = useCallback(async () => {
+  try {
+    const response = await userService.getAllUsers();
+    setUsers(response);
+  } catch (error) {
     toast({
-      title: "Delete User",
-      description: `User with ID ${userId} deleted (stub).`,
-      variant: "default",
+      title: "Error fetching users",
+      description: (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || "An unexpected error occurred.",
+      variant: "destructive",
     });
-  };
+  }
+}, [toast]);
 
-  const handleEditUser = (e: React.FormEvent) => {
+  // Fetch users on mount
+  useEffect(() => {
+    fetchUsers();
+    const token = authUtils.getToken();
+    if (token) {
+      const decodedToken = authUtils.decodeToken(token);
+      if (decodedToken) {
+        setCurrentUserId(decodedToken.sub);
+      }
+    }
+  }, [fetchUsers]);
+
+const handleEditUserOpen = async (user: UserResponseAdminDto) => {
+  try {
+    const fullUser = await userService.getUserById(user.id);
+    setSelectedUser(fullUser);
+    setEditRole(fullUser.role);
+    setEditAccountConfirmed(fullUser.account_confirmed);
+    setEditBio(fullUser.bio || null);
+    fetchUserProfileImages(fullUser.id);
+  } catch (error) {
+    toast({
+      title: "Error fetching user details",
+      description: (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || "An unexpected error occurred.",
+      variant: "destructive",
+    });
+  }
+};
+
+const handleViewUserOpen = async (user: UserResponseAdminDto) => {
+  try {
+    const fullUser = await userService.getUserById(user.id);
+    setViewUser(fullUser);
+    fetchUserProfileImages(fullUser.id);
+  } catch (error) {
+    toast({
+      title: "Error fetching user details",
+      description: (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || "An unexpected error occurred.",
+      variant: "destructive",
+    });
+  }
+};
+
+const fetchUserProfileImages = useCallback(async (userId: string) => {
+  try {
+    const images: UserImageResponseDto[] = await userService.adminGetUserProfileImages(userId);
+    setSelectedUserProfileImages(images);
+  } catch (error) {
+    toast({
+      title: "Error fetching user profile images",
+      description: (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || "An unexpected error occurred.",
+      variant: "destructive",
+    });
+  }
+}, [toast]);
+
+  const handleEditUser = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement user edit logic
-    toast({
-      title: "Edit User",
-      description: `User changes saved (stub).`,
-      variant: "default",
-    });
-    setSelectedUser(null);
+    if (!selectedUser) return;
+    try {
+      const userData: UserAdminEdit = {
+        role: editRole,
+        account_confirmed: editAccountConfirmed,
+        bio: editBio,
+      };
+      await userService.adminEditUser(selectedUser.id, userData, editProfileImage ?? undefined);
+      toast({
+        title: "Edit User",
+        description: `User changes saved successfully!`,
+        variant: "default",
+      });
+      setSelectedUser(null);
+      fetchUsers();
+    } catch (error) {
+      toast({
+        title: "Error editing user",
+        description: (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || "An unexpected error occurred.",
+        variant: "destructive",
+      });
+    }
   };
 
-  const fetchUsers = useCallback(async () => {
+  const handleDeleteUser = async (userId: string) => {
     try {
-      const response = await userService.getAllUsers();
-      setUsers(response);
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        toast({
-          title: "Error fetching users",
-          description: (error as any).response?.data?.detail || "An unexpected error occurred.",
-          variant: "destructive",
-        });
-      }
+      await userService.adminDeleteUser(userId);
+      toast({
+        title: "Delete User",
+        description: `User deleted successfully!`,
+        variant: "default",
+      });
+      fetchUsers();
+    } catch (error) {
+      toast({
+        title: "Error deleting user",
+        description: (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || "An unexpected error occurred.",
+        variant: "destructive",
+      });
     }
-  }, [toast]);
+  };
 
-  const fetchUserProfileImages = useCallback(async (userId: string) => {
-    try {
-      const images = await userService.adminGetUserProfileImages(userId);
-      setSelectedUserProfileImages(images);
-    } catch (error: unknown) {
-      if (error instanceof Error) {
-        toast({
-          title: "Error fetching user profile images",
-          description: (error as any).response?.data?.detail || "An unexpected error occurred.",
-          variant: "destructive",
-        });
-      }
-    }
-  }, [toast]);
-
-  const filteredUsers = users.filter(user => 
-    user.username.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    user.email.toLowerCase().includes(searchTerm.toLowerCase())
+const filteredUsers = users.filter(
+    (user) =>
+      user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-  const stats = {
-    totalUsers: users.length,
-    activeUsers: users.filter(u => u.accountConfirmed).length,
-    adminUsers: users.filter(u => u.role === "admin").length,
-    pendingUsers: users.filter(u => !u.accountConfirmed).length,
-  };
+const stats = {
+  totalUsers: filteredUsers.length,
+  activeUsers: filteredUsers.filter(u => u.account_confirmed).length,
+  adminUsers: filteredUsers.filter(u => u.role === "admin").length,
+  pendingUsers: filteredUsers.filter(u => !u.account_confirmed).length,
+};
 
   return (
     <div className="min-h-screen gradient-cozy bg-background text-foreground dark:bg-background-dark dark:text-foreground-dark">
-      {/* Header */}
-      <header className="sticky top-0 z-50 bg-card/80 backdrop-blur-md border-b border-border dark:bg-card-dark/80 dark:border-border-dark">
-        <div className="max-w-7xl mx-auto p-4">
-          <div className="flex justify-between items-center">
-            <div className="flex items-center space-x-4">
-              <Button
-                variant="ghost"
-                onClick={() => navigate("/dashboard")}
-                className="flex items-center space-x-2"
-              >
-                <MessageCircle className="h-5 w-5 text-accent" />
-                <span className="font-crimson font-semibold">WhatUp</span>
-              </Button>
-              <Separator orientation="vertical" className="h-6" />
-              <div className="flex items-center space-x-2">
-                <Crown className="h-5 w-5 text-yellow-500" />
-                <h1 className="text-xl font-crimson font-semibold">Admin Panel</h1>
-              </div>
-            </div>
-            
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                onClick={() => navigate("/profile")}
-                className="hidden sm:inline-flex"
-              >
-                Profile
-              </Button>
-              <Button
-                variant="outline"
-                onClick={() => navigate("/dashboard")}
-                className="hidden sm:inline-flex"
-              >
-                Back to Chat
-              </Button>
-            </div>
-          </div>
-        </div>
-      </header>
-
-      <div className="max-w-7xl mx-auto p-6">
+      <main className="max-w-7xl mx-auto p-6">
         {/* Stats Overview */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Card className="card-cozy text-center bg-card dark:bg-card-dark text-card-foreground dark:text-card-foreground-dark">
+          <Card className="card-cozy text-center bg-card/90 dark:bg-[#23243a] backdrop-blur-sm border border-border/70 dark:border-transparent shadow-cozy dark:shadow-[0_2px_16px_0_rgba(0,0,0,0.30)] transition-colors">
             <Users className="h-8 w-8 text-accent mx-auto mb-2" />
             <div className="text-2xl font-crimson font-bold">{stats.totalUsers}</div>
             <div className="text-sm text-muted-foreground">Total Users</div>
           </Card>
-          
-          <Card className="card-cozy text-center dark:bg-card-dark dark:text-card-foreground-dark">
+          <Card className="card-cozy text-center bg-card/90 dark:bg-[#23243a] backdrop-blur-sm border border-border/70 dark:border-transparent shadow-cozy dark:shadow-[0_2px_16px_0_rgba(0,0,0,0.30)] transition-colors">
             <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
             <div className="text-2xl font-crimson font-bold">{stats.activeUsers}</div>
             <div className="text-sm text-muted-foreground">Active Users</div>
           </Card>
-          
-          <Card className="card-cozy text-center dark:bg-card-dark dark:text-card-foreground-dark">
+          <Card className="card-cozy text-center bg-card/90 dark:bg-[#23243a] backdrop-blur-sm border border-border/70 dark:border-transparent shadow-cozy dark:shadow-[0_2px_16px_0_rgba(0,0,0,0.30)] transition-colors">
             <Crown className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
             <div className="text-2xl font-crimson font-bold">{stats.adminUsers}</div>
             <div className="text-sm text-muted-foreground">Admins</div>
           </Card>
-          
-          <Card className="card-cozy text-center dark:bg-card-dark dark:text-card-foreground-dark">
+          <Card className="card-cozy text-center bg-card/90 dark:bg-[#23243a] backdrop-blur-sm border border-border/70 dark:border-transparent shadow-cozy dark:shadow-[0_2px_16px_0_rgba(0,0,0,0.30)] transition-colors">
             <XCircle className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
             <div className="text-2xl font-crimson font-bold">{stats.pendingUsers}</div>
             <div className="text-sm text-muted-foreground">Pending</div>
@@ -179,16 +191,16 @@ const Admin = () => {
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3 mb-6">
-            <TabsTrigger value="users" className="flex items-center space-x-2">
+          <TabsList className="grid w-full grid-cols-3 mb-6 bg-card/80 dark:bg-[#23243a] backdrop-blur-sm border border-border/70 dark:border-transparent shadow-cozy rounded-lg p-1">
+            <TabsTrigger value="users" className="flex items-center space-x-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm rounded-md py-2 px-4 transition-all duration-300">
               <Users className="h-4 w-4" />
               <span>User Management</span>
             </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center space-x-2">
+            <TabsTrigger value="settings" className="flex items-center space-x-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm rounded-md py-2 px-4 transition-all duration-300">
               <Settings className="h-4 w-4" />
               <span>System Settings</span>
             </TabsTrigger>
-            <TabsTrigger value="logs" className="flex items-center space-x-2">
+            <TabsTrigger value="logs" className="flex items-center space-x-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm rounded-md py-2 px-4 transition-all duration-300">
               <Shield className="h-4 w-4" />
               <span>Activity Logs</span>
             </TabsTrigger>
@@ -197,97 +209,51 @@ const Admin = () => {
           {/* Users Tab */}
           <TabsContent value="users">
             <div className="space-y-6">
-              {/* Search and Actions */}
-              <Card className="card-cozy dark:bg-card-dark dark:text-card-foreground-dark">
-                <div className="flex flex-col sm:flex-row gap-4 items-center justify-between">
-                  <div className="relative flex-1 max-w-md">
-                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-                    <Input
-                      placeholder="Search users..."
-                      value={searchTerm}
-                      onChange={(e) => setSearchTerm(e.target.value)}
-                      className="pl-10"
-                    />
+              <Card className="card-cozy dark:bg-card-dark dark:text-card-foreground-dark flex flex-col sm:flex-row gap-4 items-center justify-between">
+                <div className="flex flex-col gap-2 w-full sm:w-auto">
+                  <div className="flex flex-col gap-2 w-full sm:w-auto">
+                    <Input placeholder="Search users..." className="w-full sm:w-64 input-cozy" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
                   </div>
-                  <Button className="btn-accent">
-                    <UserPlus className="h-4 w-4 mr-2" />
-                    Add User
-                  </Button>
                 </div>
               </Card>
-
-              {/* Users List */}
               <Card className="card-cozy dark:bg-card-dark dark:text-card-foreground-dark">
                 <div className="space-y-4">
-                  {filteredUsers.map((user) => (
-                    <div key={user.id} className="flex items-center justify-between p-4 border border-border rounded-lg hover:bg-muted/50 transition-colors">
-                      <div className="flex items-center space-x-4">
-                        <Avatar className="h-12 w-12">
-                          {/* Use user's active_avatar_url if present, otherwise fallback to placeholder */}
-                          <AvatarImage
-                            src={user.active_avatar_url ? `${objectStorageBaseUrl}/${user.active_avatar_url}` : '/placeholder.svg'}
-                            alt={user.username}
-                          />
-                          <AvatarFallback className="bg-accent/10 text-accent">
-                            {user.username.slice(0, 2).toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                        
-                        <div>
-                          <div className="flex items-center space-x-2">
-                            <span className="font-medium">@{user.username}</span>
-                            {user.role === "admin" && (
-                              <Crown className="h-4 w-4 text-yellow-500" />
-                            )}
-                          </div>
-                          <div className="text-sm text-muted-foreground">{user.email}</div>
-                          <div className="flex items-center space-x-2 mt-1">
-                            <Badge variant={user.accountConfirmed ? "default" : "secondary"}>
-                              {user.accountConfirmed ? "Verified" : "Pending"}
-                            </Badge>
-                            <Badge variant="outline" className="capitalize">
-                              {user.role}
-                            </Badge>
+                  {filteredUsers.length === 0 ? (
+                    <p className="text-center text-muted-foreground">No users found.</p>
+                  ) : (
+                    filteredUsers.map((user) => (
+                      <Card key={user.id} className={`flex items-center justify-between p-4 rounded-lg bg-card/80 hover:bg-muted/60 dark:bg-[#23243a] dark:hover:bg-[#23243a]/80 dark:text-slate-100 dark:shadow-[0_1px_4px_0_rgba(0,0,0,0.18)] transition-all animate-cozy-slide-up ${user.id === currentUserId ? 'border-2 border-primary shadow-lg' : ''}`}>
+                        <div className="flex items-center gap-3">
+                          {user.active_avatar_url ? (
+                            <img
+                              src={`${objectStorageBaseUrl}/${user.active_avatar_url}`}
+                              alt={user.username}
+                              className="h-10 w-10 rounded-full object-cover border border-border"
+                            />
+                          ) : (
+                            <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center border border-border">
+                              <UserIcon className="h-6 w-6 text-muted-foreground" />
+                            </div>
+                          )}
+                          <div>
+                            <p className="font-medium">@{user.username}</p>
+                            <p className="text-xs text-muted-foreground">{user.email}</p>
                           </div>
                         </div>
-                      </div>
-                      
-                      <div className="flex items-center space-x-2">
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => setSelectedUser(user)}
-                        >
-                          <Edit3 className="h-4 w-4" />
-                        </Button>
-                        
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="outline" size="sm">
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>Delete User</AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to delete @{user.username}? This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>Cancel</AlertDialogCancel>
-                              <AlertDialogAction 
-                                className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                onClick={() => handleDeleteUser(user.id)}
-                              >
-                                Delete User
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </div>
-                    </div>
-                  ))}
+                        <div className="flex gap-2">
+                          <Button size="sm" variant="ghost" onClick={() => handleViewUserOpen(user)} title="View">
+                            <Eye className="h-5 w-5 text-accent" />
+                          </Button>
+                          <Button size="sm" variant="outline" onClick={() => handleEditUserOpen(user)} title="Edit">
+                            <Edit3 className="h-5 w-5 text-primary" />
+                          </Button>
+                          <Button size="sm" variant="destructive" onClick={() => handleDeleteUser(user.id)}>
+                            Delete
+                          </Button>
+                        </div>
+                      </Card>
+                    ))
+                  )}
                 </div>
               </Card>
             </div>
@@ -300,40 +266,26 @@ const Admin = () => {
                 <Settings className="h-5 w-5 text-accent" />
                 <h2 className="text-xl font-crimson font-semibold">System Settings</h2>
               </div>
-              
               <div className="space-y-6">
                 <div className="grid sm:grid-cols-2 gap-6">
                   <div className="space-y-2">
-                    <Label>Registration Mode</Label>
-                    <Select defaultValue="open">
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="open">Open Registration</SelectItem>
-                        <SelectItem value="invite">Invite Only</SelectItem>
-                        <SelectItem value="closed">Closed</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label htmlFor="app-name">Application Name</Label>
+                    <Input id="app-name" defaultValue="WhatUp" className="input-cozy" />
                   </div>
-                  
                   <div className="space-y-2">
-                    <Label>Default Role</Label>
-                    <Select defaultValue="user">
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="user">User</SelectItem>
-                        <SelectItem value="admin">Admin</SelectItem>
-                      </SelectContent>
-                    </Select>
+                    <Label htmlFor="max-users">Max Users</Label>
+                    <Input id="max-users" type="number" defaultValue={1000} className="input-cozy" />
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-card/80">
+                    <Label htmlFor="enable-registration" className="font-medium">Enable New Registrations</Label>
+                    <Switch id="enable-registration" defaultChecked />
+                  </div>
+                  <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-card/80">
+                    <Label htmlFor="email-verification" className="font-medium">Require Email Verification</Label>
+                    <Switch id="email-verification" />
                   </div>
                 </div>
-                
-                <Button className="btn-cozy">
-                  Save Settings
-                </Button>
+                <Button className="btn-primary">Save Settings</Button>
               </div>
             </Card>
           </TabsContent>
@@ -345,7 +297,6 @@ const Admin = () => {
                 <Shield className="h-5 w-5 text-accent" />
                 <h2 className="text-xl font-crimson font-semibold">Recent Activity</h2>
               </div>
-              
               <div className="space-y-4">
                 {[
                   { action: "User Registration", user: "ted_mosby", time: "2 minutes ago" },
@@ -353,107 +304,42 @@ const Admin = () => {
                   { action: "Admin Action", user: "robin_scherbatsky", time: "1 hour ago" },
                   { action: "User Login", user: "lily_aldrin", time: "2 hours ago" },
                 ].map((log, index) => (
-                  <div key={index} className="flex items-center justify-between p-3 border border-border rounded-lg">
-                    <div>
-                      <div className="font-medium">{log.action}</div>
-                      <div className="text-sm text-muted-foreground">by @{log.user}</div>
-                    </div>
-                    <div className="text-sm text-muted-foreground">{log.time}</div>
-                  </div>
+                  <Card key={index} className="flex items-center gap-3 p-3 rounded-lg bg-card/60 dark:bg-[#23243a]/60 shadow-sm">
+                    <span className="font-medium text-accent">{log.action}</span>
+                    <span className="text-muted-foreground">by @{log.user}</span>
+                    <span className="ml-auto text-xs text-muted-foreground">{log.time}</span>
+                  </Card>
                 ))}
               </div>
             </Card>
           </TabsContent>
         </Tabs>
-      </div>
+      </main>
+
+      {/* View User Modal */}
+      <ViewUserModal
+        user={viewUser}
+        profileImages={selectedUserProfileImages}
+        onClose={() => setViewUser(null)}
+        objectStorageBaseUrl={objectStorageBaseUrl}
+      />
 
       {/* Edit User Modal */}
-      {selectedUser && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center p-4 z-50">
-          <Card className="card-cozy w-full max-w-md dark:bg-card-dark dark:text-card-foreground-dark">
-            <div className="flex items-center space-x-3 mb-6">
-              <Edit3 className="h-5 w-5 text-accent" />
-              <h2 className="text-xl font-crimson font-semibold">Edit User</h2>
-            </div>
-            
-            <form className="space-y-4" onSubmit={handleEditUser}>
-              <div className="space-y-2">
-                <Label>Role</Label>
-                <Select value={editRole} onValueChange={setEditRole}>
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select a role" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="user">User</SelectItem>
-                    <SelectItem value="admin">Admin</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Account Status</Label>
-                <Select 
-                  value={editAccountConfirmed ? "confirmed" : "pending"}
-                  onValueChange={(value) => setEditAccountConfirmed(value === "confirmed")}
-                >
-                  <SelectTrigger>
-                    <SelectValue placeholder="Select status" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="confirmed">Confirmed</SelectItem>
-                    <SelectItem value="pending">Pending</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              
-              <div className="space-y-2">
-                <Label>Profile Image</Label>
-                <div className="grid grid-cols-3 gap-2 mb-2">
-                  {selectedUserProfileImages.map((image) => (
-                    <div key={image.id} className="relative w-full h-24 rounded-md overflow-hidden">
-                      <img 
-                        src={`${objectStorageBaseUrl}/${image.image_key}`}
-                        alt="Profile" 
-                        className="w-full h-full object-cover"
-                      />
-                      {image.is_active && (
-                        <Badge className="absolute top-1 left-1">Active</Badge>
-                      )}
-                    </div>
-                  ))}
-                </div>
-                <div className="border-2 border-dashed border-border rounded-lg p-4 text-center">
-                  <Upload className="h-6 w-6 text-muted-foreground mx-auto mb-2" />
-                  <Input 
-                    id="edit-profile-picture" 
-                    type="file" 
-                    accept="image/*"
-                    onChange={(e) => setEditProfileImage(e.target.files ? e.target.files[0] : null)}
-                    className="hidden" // Hide default input
-                  />
-                  <Label htmlFor="edit-profile-picture" className="btn-outline cursor-pointer">
-                    Upload New Image
-                  </Label>
-                </div>
-              </div>
-              
-              <div className="flex space-x-2 pt-4">
-                <Button type="submit" className="btn-cozy flex-1">
-                  Save Changes
-                </Button>
-                <Button 
-                  type="button" 
-                  variant="outline" 
-                  onClick={() => setSelectedUser(null)}
-                  className="flex-1"
-                >
-                  Cancel
-                </Button>
-              </div>
-            </form>
-          </Card>
-        </div>
-      )}
+      <EditUserModal
+        selectedUser={selectedUser}
+        selectedUserProfileImages={selectedUserProfileImages}
+        editRole={editRole}
+        setEditRole={setEditRole}
+        editAccountConfirmed={editAccountConfirmed}
+        setEditAccountConfirmed={setEditAccountConfirmed}
+        editProfileImage={editProfileImage}
+        setEditProfileImage={setEditProfileImage}
+        editBio={editBio}
+        setEditBio={setEditBio}
+        handleEditUser={handleEditUser}
+        onClose={() => setSelectedUser(null)}
+        objectStorageBaseUrl={objectStorageBaseUrl}
+      />
     </div>
   );
 };

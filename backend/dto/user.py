@@ -11,6 +11,7 @@ class UserRole(str, Enum):
 class UserBase(BaseModel):
     username: str
     email: EmailStr
+    bio: Optional[str] = None
 
 class UserCreate(UserBase):
     password: str # Password will be hashed before saving
@@ -19,8 +20,10 @@ class UserInDBBase(UserBase):
     id: UUID
     created_at: datetime
     role: UserRole
+    account_confirmed: bool
     active_avatar_url: Optional[str] = None
     public_key: Optional[str] = None
+    bio: Optional[str] = None
 
     class Config:
         from_attributes = True
@@ -32,11 +35,23 @@ class UserResponseDto(BaseModel):
     id: UUID
     username: str
     email: EmailStr
+    account_confirmed: bool
     active_avatar_url: Optional[str] = None
     public_key: Optional[str] = None
+    bio: Optional[str] = None
     created_at: datetime
 
 class UserResponseAdminDto(UserResponseDto):
+    role: UserRole
+
+class UserResponseAdminListDto(BaseModel):
+    id: UUID
+    username: str
+    email: EmailStr
+    account_confirmed: bool
+    active_avatar_url: Optional[str] = None
+    public_key: Optional[str] = None
+    created_at: datetime
     role: UserRole
 
 class UserUpdatePublicKey(BaseModel):
@@ -49,3 +64,7 @@ class UserLogin(BaseModel):
 class UserAdminEdit(BaseModel):
     role: Optional[UserRole] = None
     account_confirmed: Optional[bool] = None
+    bio: Optional[str] = None
+
+class UserUpdateDto(BaseModel):
+    bio: Optional[str] = None

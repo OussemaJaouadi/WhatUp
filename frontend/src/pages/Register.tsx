@@ -9,62 +9,40 @@ import { useToast } from "@/hooks/use-toast";
 import { authService } from "@/services/auth";
 import { animate, createScope } from "animejs";
 
-export default function Register() {
+function Register() {
+  const cardRef = useRef<HTMLDivElement>(null);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setFormData({
+      ...formData,
+      [e.target.name]: e.target.value,
+    });
+  };
+
+  const handleSubmit = (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    handleRegister();
+  };
   const [formData, setFormData] = useState({
     username: "",
     email: "",
     password: "",
     confirmPassword: ""
   });
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const { toast } = useToast();
   const navigate = useNavigate();
-  const cardRef = useRef<HTMLDivElement>(null);
-  const scope = useRef<any>(null);
+  const { toast } = useToast();
+  const scope = useRef<ReturnType<typeof createScope> | null>(null);
 
-  useEffect(() => {
-    if (!cardRef.current) return;
-
-    scope.current = createScope({ root: cardRef.current }).add(() => {
-      animate('.register-card', {
-        translateY: [40, 0],
-        opacity: [0, 1],
-        scale: [0.98, 1],
-        duration: 600,
-        ease: 'out(2)'
-      });
-
-      animate('.form-field', {
-        translateY: [20, 0],
-        opacity: [0, 1],
-        delay: (el, i) => i * 60 + 200,
-        duration: 500,
-        ease: 'out(2)'
-      });
-    });
-
-    return () => scope.current?.revert();
-  }, []);
-
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setFormData(prev => ({
-      ...prev,
-      [e.target.name]: e.target.value
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-
+  const handleRegister = async () => {
     if (formData.password !== formData.confirmPassword) {
       animate('.register-card', {
         translateX: [-6, 6, -4, 4, -2, 2, 0],
         duration: 400,
         ease: 'out(2)'
       });
-
       toast({
         variant: "destructive",
         title: "Password Mismatch",
@@ -72,14 +50,12 @@ export default function Register() {
       });
       return;
     }
-
     setIsLoading(true);
-
     try {
       await authService.register({
         username: formData.username,
         email: formData.email,
-        password: formData.password
+        password: formData.password,
       });
 
       animate('.register-card', {
@@ -95,21 +71,34 @@ export default function Register() {
         }
       });
     } catch (error: any) {
-      animate('.register-card', {
-        translateX: [-8, 8, -6, 6, -4, 4, -2, 2, 0],
-        duration: 500,
-        ease: 'out(2)'
-      });
-
-      toast({
-        variant: "destructive",
-        title: "Registration Failed",
-        description: error.response?.data?.detail || "Please try again with different credentials.",
-      });
+      if (error.message && error.message.includes("key generation")) {
+        toast({
+          variant: "destructive",
+          title: "Key Generation Failed",
+          description: "Could not generate cryptographic keys. Please try again.",
+        });
+      } else if (error.message && error.message.includes("public key upload")) {
+        toast({
+          variant: "destructive",
+          title: "Public Key Upload Failed",
+          description: "Account created, but could not upload public key. Please try logging in.",
+        });
+      } else {
+        animate('.register-card', {
+          translateX: [-8, 8, -6, 6, -4, 4, -2, 2, 0],
+          duration: 500,
+          ease: 'out(2)'
+        });
+        toast({
+          variant: "destructive",
+          title: "Registration Failed",
+          description: error.response?.data?.detail || "Please try again with different credentials.",
+        });
+      }
     } finally {
       setIsLoading(false);
     }
-  };
+  }; // Added missing closing brace
 
   const handleGoogleSignup = () => {
     toast({
@@ -305,3 +294,5 @@ export default function Register() {
     </div>
   );
 }
+
+export default Register;

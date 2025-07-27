@@ -1,16 +1,18 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, status, Request, Form
+from fastapi import APIRouter, UploadFile, File, HTTPException, status, Request, Form, Depends
 from typing import Optional
 from uuid import UUID
 from pydantic import EmailStr
-from dto.user import UserCreate, UserResponseDto, UserResponseAdminDto, UserUpdatePublicKey, UserLogin, UserAdminEdit, UserRole
+from dto.user import UserCreate, UserResponseDto, UserResponseAdminDto, UserUpdatePublicKey, UserLogin, UserAdminEdit, UserRole, UserResponseAdminListDto
 from dto.user_image import UserImageResponseDto
 from fastapi.responses import Response
 from services.user_service import UserService
 from utils.image import ImageSecurityError
 from utils.decorators import requires_auth, requires_admin, requires_no_auth
+from utils.jwt import get_current_user
 
 
 class UserRoutes:
+
     def __init__(self, user_service: UserService):
         self.user_service = user_service
         self.router = APIRouter(prefix="/user", tags=["user"])
@@ -26,16 +28,21 @@ class UserRoutes:
         self.router.add_api_route("/delete", self.delete_user, methods=["DELETE"], response_model=dict)
         self.router.add_api_route("/admin/delete/{user_id}", self.admin_delete_user, methods=["DELETE"], response_model=dict)
         self.router.add_api_route("/me", self.get_me, methods=["GET"], response_model=UserResponseDto)
-        self.router.add_api_route("/all", self.get_all_users, methods=["GET"], response_model=list[UserResponseAdminDto])
+        self.router.add_api_route("/all", self.get_all_users, methods=["GET"], response_model=list[UserResponseAdminListDto])
+        self.router.add_api_route("/{user_id}", self.get_user_by_id, methods=["GET"], response_model=UserResponseDto)
         self.router.add_api_route("/admin/edit", self.admin_edit_user, methods=["PUT"], response_model=UserResponseAdminDto)
+        self.router.add_api_route("/me/bio", self.update_my_bio, methods=["PUT"], response_model=UserResponseDto)
         self.router.add_api_route("/request-password-reset", self.request_password_reset, methods=["POST"])
         self.router.add_api_route("/reset-password", self.reset_password, methods=["POST"])
         self.router.add_api_route("/confirm-account", self.confirm_account, methods=["GET"])
         self.router.add_api_route("/public-key", self.update_public_key, methods=["PUT"], response_model=dict)
         self.router.add_api_route("/public-key/{user_id}", self.get_public_key, methods=["GET"], response_model=dict)
+        self.router.add_api_route("/search", self.get_user_by_username, methods=["GET"], response_model=UserResponseDto)
+        self.router.add_api_route("/private-key-backup", self.upload_private_key_backup, methods=["PUT"], response_model=dict)
+        self.router.add_api_route("/private-key-backup", self.get_private_key_backup, methods=["GET"], response_model=dict)
 
     @requires_no_auth
-    async def register(self, request: Request, username: str = Form(...), email: EmailStr = Form(...), password: str = Form(...), file: Optional[UploadFile] = None):
+    async def register(self, username: str = Form(...), email: EmailStr = Form(...), password: str = Form(...), file: Optional[UploadFile] = None):
         user_data = UserCreate(username=username, email=email, password=password)
         image_bytes = await file.read() if file else None
         try:
@@ -110,10 +117,12 @@ class UserRoutes:
     @requires_admin
     async def admin_get_user_profile_images(self, request: Request, user_id: UUID) -> list[UserImageResponseDto]:
         try:
-            images = await self.user_service.get_user_images(str(user_id))
-            return images
-        except ValueError as e:
-            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+            # Check if user exists first
+            user = await self.user_service.get_user_by_id(str(user_id))
+        except ValueError:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="User not found")
+        images = await self.user_service.get_user_images(str(user_id))
+        return images
 
     @requires_admin
     async def admin_get_user_profile_image_data(self, request: Request, user_id: UUID, image_id: UUID) -> Response:
@@ -155,25 +164,55 @@ class UserRoutes:
         except ValueError as e:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
+
+    @requires_admin
+    async def get_user_by_id(self, request: Request, user_id: str) -> UserResponseAdminDto:
+        try:
+            user = await self.user_service.get_user_by_id(user_id)
+            return user
+        except ValueError as e:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
     @requires_admin
     async def get_all_users(self, request: Request) -> list[UserResponseAdminDto]:
         users = await self.user_service.get_all_users()
-        return [UserResponseAdminDto.model_validate(u.__dict__) for u in users]
+        return [UserResponseAdminListDto.model_validate(u.__dict__) for u in users]
+
+    @requires_auth
+    async def get_user_by_id(self, request: Request, user_id: UUID) -> UserResponseDto:
+        try:
+            user = await self.user_service.get_user_by_id(str(user_id))
+            return UserResponseDto.model_validate(user.__dict__)
+        except ValueError as e:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
 
     @requires_admin
-    async def admin_edit_user(self, request: Request, user_id: str, role: Optional[UserRole] = Form(None), account_confirmed: Optional[bool] = Form(None), file: UploadFile = File(None)) -> UserResponseAdminDto:
+    async def admin_edit_user(self, request: Request, user_id: str, role: Optional[UserRole] = Form(None), account_confirmed: Optional[bool] = Form(None), bio: Optional[str] = Form(None), file: UploadFile = File(None)) -> UserResponseAdminDto:
         # Handle empty string for optional form fields
         if role == "":
             role = None
         if account_confirmed == "":
             account_confirmed = None
+        if bio == "":
+            bio = None
 
-        user_data = UserAdminEdit(role=role, account_confirmed=account_confirmed)
+        user_data = UserAdminEdit(role=role, account_confirmed=account_confirmed, bio=bio)
         try:
             user = await self.user_service.admin_edit_user(user_id, user_data, await file.read() if file else None)
             return UserResponseAdminDto.model_validate(user.__dict__)
         except ValueError as e:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+
+    @requires_auth
+    async def update_my_bio(self, request: Request, bio: Optional[str] = Form(None)) -> UserResponseDto:
+        user_id = request.state.user.sub
+        if bio == "":
+            bio = None
+        try:
+            user = await self.user_service.update_user_bio(user_id, bio)
+            return UserResponseDto.model_validate(user.__dict__)
+        except ValueError as e:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
     @requires_no_auth
     async def request_password_reset(self, email: str):
@@ -214,5 +253,41 @@ class UserRoutes:
             if not public_key:
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Public key not found for this user.")
             return {"public_key": public_key}
+        except ValueError as e:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    @requires_auth
+    async def get_user_by_username(self, request: Request, username: str) -> UserResponseDto:
+        try:
+            user = await self.user_service.get_user_by_username(username)
+            return UserResponseDto.model_validate(user.__dict__)
+        except ValueError as e:
+            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+    
+    @requires_auth
+    async def upload_private_key_backup(self, request: Request, backup_data: dict) -> dict:
+        """
+        Upload encrypted private key backup for the authenticated user.
+        Expects: { encrypted_private_key, salt, iv }
+        """
+        user_id = request.state.user.sub
+        try:
+            await self.user_service.set_private_key_backup(user_id, backup_data)
+            return {"detail": "Encrypted private key backup stored successfully."}
+        except ValueError as e:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    @requires_auth
+    async def get_private_key_backup(self, request: Request) -> dict:
+        """
+        Retrieve encrypted private key backup for the authenticated user.
+        Returns: { encrypted_private_key, salt, iv }
+        """
+        user_id = request.state.user.sub
+        try:
+            backup = await self.user_service.get_private_key_backup(user_id)
+            if not backup:
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No backup found for this user.")
+            return backup
         except ValueError as e:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

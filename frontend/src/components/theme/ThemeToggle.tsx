@@ -5,10 +5,10 @@ import { Button } from "@/components/ui/button";
 import { useEffect, useRef } from "react";
 import { animate, createScope } from "animejs";
 
-export function ThemeToggle() {
+export default function ThemeToggle() {
   const { theme, setTheme } = useTheme();
   const buttonRef = useRef<HTMLButtonElement>(null);
-  const scope = useRef<any>(null);
+  const scope = useRef<ReturnType<typeof createScope> | null>(null);
   
   const isDark = (() => {
     if (theme === "dark") return true;
@@ -56,7 +56,7 @@ export function ThemeToggle() {
         className="theme-toggle-btn h-12 w-12 p-0 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 transition-all duration-300 group border border-slate-200 dark:border-slate-700 shadow-lg bg-white/90 dark:bg-slate-800/90 backdrop-blur-sm"
         aria-label={isDark ? "Switch to light mode" : "Switch to dark mode"}
       >
-          {isDark ? (
+        {isDark ? (
           <Sun className="h-5 w-5 text-amber-500 transition-transform group-hover:rotate-12" />
         ) : (
           <Moon className="h-5 w-5 text-slate-700 dark:text-slate-300 transition-transform group-hover:-rotate-12" />
