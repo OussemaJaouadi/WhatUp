@@ -57,7 +57,7 @@ const UserSelectionModal: React.FC<UserSelectionModalProps> = ({ isOpen, onClose
                   }}
                 >
                   <Avatar className="h-8 w-8">
-                    <AvatarImage src={user.active_avatar_url ? `${objectStorageBaseUrl}/${user.active_avatar_url}` : '/placeholder.svg'} />
+                    <AvatarImage src={user.active_avatar_url ? `${objectStorageBaseUrl}/${user.active_avatar_url}` : '/default-avatar.svg'} />
                     <AvatarFallback>{user.username.slice(0, 2).toUpperCase()}</AvatarFallback>
                   </Avatar>
                   <div>

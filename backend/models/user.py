@@ -29,6 +29,8 @@ class User(Base):
     encrypted_private_key = Column(String, nullable=True)
     salt = Column(String, nullable=True)
     iv = Column(String, nullable=True)
+    # Hash of the password used to encrypt the private key (for verification during recovery)
+    private_key_password_hash = Column(String, nullable=True)
 
     role = Column(Enum(UserRole), default=UserRole.USER, nullable=False)
     created_at = Column(DateTime, default=datetime.utcnow)

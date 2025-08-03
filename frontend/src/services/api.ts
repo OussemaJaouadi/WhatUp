@@ -33,6 +33,7 @@ api.interceptors.response.use(
       // Handle unauthorized errors, e.g., redirect to login page
       console.error('Unauthorized: Token expired or invalid');
       authUtils.removeToken();
+      authUtils.removeTempLoginPassword(); // Clean up stored password
       window.location.href = '/login'; // Redirect to login page
     }
     return Promise.reject(error);

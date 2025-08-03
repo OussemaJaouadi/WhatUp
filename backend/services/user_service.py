@@ -419,21 +419,32 @@ class UserService:
     async def set_private_key_backup(self, user_id: str, backup_data: dict) -> None:
         """
         Store encrypted private key backup for the user.
-        backup_data: { encrypted_private_key, salt, iv }
+        backup_data: { encrypted_private_key, salt, iv, password }
         """
         async with self.db_session_factory() as session:
             result = await session.execute(select(UserModel).where(UserModel.id == user_id))
             user = result.scalar_one_or_none()
             if not user:
                 raise ValueError("User not found")
-            user.encrypted_private_key = backup_data.get("encrypted_private_key")
-            user.salt = backup_data.get("salt")
-            user.iv = backup_data.get("iv")
+            
+            # Validate required fields
+            required_fields = ["encrypted_private_key", "salt", "iv", "password"]
+            for field in required_fields:
+                if field not in backup_data or not backup_data[field]:
+                    raise ValueError(f"Missing required field: {field}")
+            
+            # Hash the password on the backend
+            password_hash = self.pwd_context.hash(backup_data["password"])
+            
+            user.encrypted_private_key = backup_data["encrypted_private_key"]
+            user.salt = backup_data["salt"]
+            user.iv = backup_data["iv"]
+            user.private_key_password_hash = password_hash
             await session.commit()
 
-    async def get_private_key_backup(self, user_id: str) -> Optional[dict]:
+    async def get_private_key_backup(self, user_id: str, password: str) -> Optional[dict]:
         """
-        Retrieve encrypted private key backup for the user.
+        Retrieve encrypted private key backup for the user after password verification.
         Returns: { encrypted_private_key, salt, iv } or None
         """
         async with self.db_session_factory() as session:
@@ -441,10 +452,56 @@ class UserService:
             user = result.scalar_one_or_none()
             if not user:
                 raise ValueError("User not found")
-            if not user.encrypted_private_key or not user.salt or not user.iv:
+            
+            # Check if backup exists
+            if not user.encrypted_private_key or not user.salt or not user.iv or not user.private_key_password_hash:
                 return None
+            
+            # Verify password hash
+            if not self.pwd_context.verify(password, user.private_key_password_hash):
+                raise ValueError("Invalid password for private key recovery")
+            
             return {
                 "encrypted_private_key": user.encrypted_private_key,
                 "salt": user.salt,
                 "iv": user.iv
             }
+
+    async def get_crypto_setup_status(self, user_id: str) -> dict:
+        """
+        Check the cryptographic setup status for a user.
+        Returns information about what keys/backups are configured.
+        """
+        async with self.db_session_factory() as session:
+            result = await session.execute(select(UserModel).where(UserModel.id == user_id))
+            user = result.scalar_one_or_none()
+            if not user:
+                raise ValueError("User not found")
+            
+            has_public_key = bool(user.public_key)
+            has_private_key_backup = bool(
+                user.encrypted_private_key and 
+                user.salt and 
+                user.iv and 
+                user.private_key_password_hash
+            )
+            
+            return {
+                "has_public_key": has_public_key,
+                "has_private_key_backup": has_private_key_backup,
+                "setup_complete": has_public_key and has_private_key_backup,
+                "next_steps": self._get_setup_next_steps(has_public_key, has_private_key_backup)
+            }
+    
+    def _get_setup_next_steps(self, has_public_key: bool, has_private_key_backup: bool) -> list[str]:
+        """
+        Generate helpful next steps for crypto setup.
+        """
+        steps = []
+        if not has_public_key:
+            steps.append("Generate and upload your public key for receiving encrypted messages")
+        if not has_private_key_backup:
+            steps.append("Create an encrypted backup of your private key for cross-device access")
+        if has_public_key and has_private_key_backup:
+            steps.append("Setup complete! You can now use end-to-end encrypted messaging")
+        return steps

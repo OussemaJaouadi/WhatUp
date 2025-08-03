@@ -124,13 +124,18 @@ export const userService = {
     return response.data;
   },
 
-  uploadEncryptedPrivateKeyBackup: async (encryptedData: { encrypted_private_key: string; salt: string; iv: string }) => {
+  uploadEncryptedPrivateKeyBackup: async (encryptedData: { encrypted_private_key: string; salt: string; iv: string; password: string }) => {
     const response = await api.put('/user/private-key-backup', encryptedData);
     return response.data;
   },
 
   getEncryptedPrivateKeyBackup: async () => {
     const response = await api.get('/user/private-key-backup');
+    return response.data;
+  },
+
+  recoverPrivateKeyBackup: async (password: string) => {
+    const response = await api.post('/user/private-key-backup', { password });
     return response.data;
   },
 };

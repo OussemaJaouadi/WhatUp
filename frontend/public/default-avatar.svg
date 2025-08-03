@@ -1,0 +1,11 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128" fill="none">
+  <!-- Background circle with subtle gradient -->
+  <circle cx="64" cy="64" r="64" fill="#f1f5f9"/>
+  
+  <!-- User icon -->
+  <path d="M64 32c-8.837 0-16 7.163-16 16s7.163 16 16 16 16-7.163 16-16-7.163-16-16-16z" fill="#64748b"/>
+  <path d="M64 72c-17.673 0-32 14.327-32 32v8c0 4.418 3.582 8 8 8h48c4.418 0 8-3.582 8-8v-8c0-17.673-14.327-32-32-32z" fill="#64748b"/>
+  
+  <!-- Subtle border -->
+  <circle cx="64" cy="64" r="63" stroke="#cbd5e1" stroke-width="2" fill="none"/>
+</svg>

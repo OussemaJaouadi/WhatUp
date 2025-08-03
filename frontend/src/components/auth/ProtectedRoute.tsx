@@ -24,8 +24,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ allowedRoles }) => {
     }
     const userRole = decodedToken.role;
     const userId = decodedToken.sub;
-    const backendUrl = getApiBaseUrl();
-    const { messages, sendMessage } = useMessages({ userId, jwt: token, backendUrl });
+    const { messages, sendMessage } = useMessages({ userId });
 
     // TODO: Handle messages or sendMessage as needed for WebSocket events
 

@@ -29,6 +29,8 @@ import { encryptMessage, decryptMessage } from "@/lib/cryptoUtils";
 import { keyStorage } from "@/lib/keyStorage";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { KeySetupModal } from "@/components/modals/KeySetupModal";
+import { EncryptionSetupBanner } from "@/components/EncryptionSetupBanner";
 
 const Dashboard = () => {
   const objectStorageBaseUrl = getObjectStorageBaseUrl();
@@ -41,12 +43,30 @@ const Dashboard = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [userNamesMap, setUserNamesMap] = useState<Record<string, string>>({});
   const [isEncrypted, setIsEncrypted] = useState(false);
+  const [showKeySetup, setShowKeySetup] = useState(false);
+
+  const addMessage = (newMessage: Message) => {
+    setMessages(prev => [...prev, newMessage]);
+  };
 
   useEffect(() => {
     const fetchCurrentUser = async () => {
       try {
         const user = await userService.getMe();
         setCurrentUser(user);
+        
+        // Check if user needs key setup (no public key means no encryption keys)
+        if (!user.public_key) {
+          // Check if this is the first time we're prompting for key setup
+          const hasBeenPrompted = localStorage.getItem(`key_setup_prompted_${user.id}`);
+          if (!hasBeenPrompted) {
+            setShowKeySetup(true);
+            localStorage.setItem(`key_setup_prompted_${user.id}`, 'true');
+          }
+        }
+
+        // Now fetch conversations after we have the user data
+        await fetchConversations(user);
       } catch (error) {
         toast({
           title: "Error fetching user data",
@@ -58,17 +78,17 @@ const Dashboard = () => {
       }
     };
 
-    const fetchConversations = async () => {
+    const fetchConversations = async (user: UserResponseDto) => {
       try {
         const userConversations = await conversationService.getMyConversations();
         setChats(userConversations);
 
         const newUserNamesMap: Record<string, string> = {};
         for (const conversation of userConversations) {
-          const otherUserId = conversation.user1_id === currentUser.id ? conversation.user2_id : conversation.user1_id;
-          if (!newUserNamesMap[otherUserId]) {
-            const user = await userService.getUserById(otherUserId);
-            newUserNamesMap[otherUserId] = user.username;
+          const otherUserId = conversation.participant_ids.find(id => id !== user.id);
+          if (otherUserId && !newUserNamesMap[otherUserId]) {
+            const userInfo = await userService.getUserById(otherUserId);
+            newUserNamesMap[otherUserId] = userInfo.username;
           }
         }
         setUserNamesMap(newUserNamesMap);
@@ -83,7 +103,6 @@ const Dashboard = () => {
     };
 
     fetchCurrentUser();
-    fetchConversations();
   }, []);
 
   useEffect(() => {
@@ -124,10 +143,34 @@ const Dashboard = () => {
 
   const handleLogout = () => {
     authUtils.removeToken();
+    authUtils.removeTempLoginPassword(); // Clean up stored password
     navigate("/");
     toast({
-      title: "Logged out",
-      description: "You have been successfully logged out.",
+      title: "See you soon! 👋",
+      description: "You've been logged out. Come back anytime!",
+    });
+  };
+
+  const handleKeySetupComplete = async () => {
+    setShowKeySetup(false);
+    // Refresh user data to get the updated public key
+    try {
+      const updatedUser = await userService.getMe();
+      setCurrentUser(updatedUser);
+    } catch (error) {
+      console.error('Failed to refresh user data after key setup:', error);
+    }
+    toast({
+      title: "🎉 Encryption Setup Complete!",
+      description: "Your account is now secured with end-to-end encryption. Happy messaging!",
+    });
+  };
+
+  const handleKeySetupSkip = () => {
+    setShowKeySetup(false);
+    toast({
+      title: "Setup Skipped",
+      description: "You can set up encryption later in your profile settings.",
     });
   };
 
@@ -144,6 +187,15 @@ const Dashboard = () => {
   return (
     <div className="min-h-[calc(100vh-80px)] gradient-cozy dark:bg-[#181926] text-foreground flex flex-col">
       <div className="flex-1 max-w-7xl mx-auto w-full px-4 py-8">
+        {/* Encryption Setup Banner */}
+        {currentUser && (
+          <EncryptionSetupBanner 
+            userId={currentUser.id} 
+            userHasPublicKey={!!currentUser.public_key}
+            userPublicKey={currentUser.public_key || undefined}
+          />
+        )}
+        
         <div className="grid lg:grid-cols-4 gap-8 h-full">
           {/* Sidebar - Chats List */}
           <aside className="lg:col-span-1 space-y-6">
@@ -161,8 +213,8 @@ const Dashboard = () => {
               <div className="space-y-1 max-h-[calc(100vh-200px)] overflow-y-auto">
                 {chats.map((chat) => {
                   const isSelected = selectedChat?.id === chat.id;
-                  const otherUserId = chat.user1_id === currentUser.id ? chat.user2_id : chat.user1_id;
-                  const chatName = userNamesMap[otherUserId] || "Loading...";
+                  const otherUserId = chat.participant_ids.find(id => id !== currentUser.id);
+                  const chatName = otherUserId ? userNamesMap[otherUserId] || "Loading..." : "Unknown User";
                   return (
                     <div
                       key={chat.id}
@@ -175,7 +227,7 @@ const Dashboard = () => {
                       style={{ minHeight: '38px', fontSize: '0.97rem' }}
                     >
                       <Avatar className={`h-7 w-7 min-w-[28px] min-h-[28px] shadow-sm ${isSelected ? 'ring-2 ring-primary/60 dark:ring-primary' : ''}`}>
-                        <AvatarImage src="/placeholder.svg" />
+                        <AvatarImage src="/default-avatar.svg" />
                         <AvatarFallback className="bg-accent/10 text-accent text-xs dark:bg-slate-700 dark:text-slate-200">
                           {chatName.slice(0, 2).toUpperCase()}
                         </AvatarFallback>
@@ -205,13 +257,19 @@ const Dashboard = () => {
                 <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-800">
                   <div className="flex items-center space-x-3">
                     <Avatar className="h-10 w-10">
-                      <AvatarImage src="/placeholder.svg" />
+                      <AvatarImage src="/default-avatar.svg" />
                       <AvatarFallback className="bg-primary/10 text-primary">
-                        {selectedChat.user1_id === currentUser.id ? userNamesMap[selectedChat.user2_id]?.slice(0, 2).toUpperCase() : userNamesMap[selectedChat.user1_id]?.slice(0, 2).toUpperCase()}
+                        {selectedChat.participant_ids.find(id => id !== currentUser.id) ? 
+                          userNamesMap[selectedChat.participant_ids.find(id => id !== currentUser.id)!]?.slice(0, 2).toUpperCase() : 
+                          "UN"}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h3 className="font-semibold text-lg text-foreground">{selectedChat.user1_id === currentUser.id ? userNamesMap[selectedChat.user2_id] : userNamesMap[selectedChat.user1_id]}</h3>
+                      <h3 className="font-semibold text-lg text-foreground">
+                        {selectedChat.participant_ids.find(id => id !== currentUser.id) ? 
+                          userNamesMap[selectedChat.participant_ids.find(id => id !== currentUser.id)!] : 
+                          "Unknown User"}
+                      </h3>
                       <p className="text-xs text-muted-foreground">
                         Online
                       </p>
@@ -268,7 +326,15 @@ const Dashboard = () => {
                         let encryptedStatus = isEncrypted;
 
                         if (isEncrypted) {
-                          const otherUserId = selectedChat.user1_id === currentUser.id ? selectedChat.user2_id : selectedChat.user1_id;
+                          const otherUserId = selectedChat.participant_ids.find(id => id !== currentUser.id);
+                          if (!otherUserId) {
+                            toast({
+                              title: "Error",
+                              description: "Cannot find recipient for this conversation.",
+                              variant: "destructive",
+                            });
+                            return;
+                          }
                           const recipientPublicKeyResponse = await userService.getPublicKey(otherUserId);
                           const recipientPublicKey = recipientPublicKeyResponse.public_key;
 
@@ -330,6 +396,13 @@ const Dashboard = () => {
           </main>
         </div>
       </div>
+      
+      {/* Key Setup Modal for first-time users */}
+      <KeySetupModal 
+        isOpen={showKeySetup}
+        onClose={handleKeySetupSkip}
+        onComplete={handleKeySetupComplete}
+      />
     </div>
   );
 };

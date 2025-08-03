@@ -68,3 +68,12 @@ class UserAdminEdit(BaseModel):
 
 class UserUpdateDto(BaseModel):
     bio: Optional[str] = None
+
+class PrivateKeyBackupUpload(BaseModel):
+    encrypted_private_key: str
+    salt: str
+    iv: str
+    password: str  # Password that will be hashed on the backend
+
+class PrivateKeyBackupRequest(BaseModel):
+    password: str  # Password to verify against stored hash

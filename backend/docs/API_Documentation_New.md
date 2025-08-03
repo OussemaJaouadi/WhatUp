@@ -371,30 +371,13 @@ Get a user's public key for encryption purposes.
 ```json
 {
   "public_key": "string|null",
-  "message": "string (optional - when key is not set up)",
-  "setup_status": "string (optional - 'complete' | 'not_setup')"
+  "message": "string (optional - when key is not set up)"
 }
 ```
 **Status Codes:** 
-- 200 (Success - always returned when user exists, regardless of encryption setup)
-- 404 (User not found - the user ID doesn't exist in the system)
+- 200 (Success - returns key or null if not set up)
+- 404 (User not found)
 - 400 (Bad Request)
-
-**Response Examples:**
-```json
-// User exists with encryption set up
-{
-  "public_key": "-----BEGIN PUBLIC KEY-----\nMIIBIjANBgkqhkiG9w0BAQEFAAOCAQ8AMIIBCgKCAQEA...",
-  "setup_status": "complete"
-}
-
-// User exists but hasn't set up encryption yet
-{
-  "public_key": null,
-  "message": "User hasn't set up encryption keys yet",
-  "setup_status": "not_setup"
-}
-```
 
 #### PUT /user/private-key-backup
 Store encrypted private key backup.
@@ -408,7 +391,7 @@ Store encrypted private key backup.
   "encrypted_private_key": "string",
   "salt": "string",
   "iv": "string",
-  "password_hash": "string"
+  "password": "string"
 }
 ```
 
@@ -444,21 +427,14 @@ Retrieve encrypted private key backup after password verification.
 ```json
 {
   "message": "No private key backup found. Please create a backup first.",
-  "backup_exists": false,
-  "setup_status": "not_setup"
+  "backup_exists": false
 }
 ```
 **Status Codes:** 
-- 200 (Success - backup found OR informative response when no backup exists)
-- 401 (Unauthorized - Invalid password for existing backup)
-- 404 (User not found - the authenticated user doesn't exist)
-- 400 (Bad Request - malformed request)
-
-**Important Notes:**
-- **200 with backup data**: User has a backup and provided correct password
-- **200 with backup_exists: false**: User exists but hasn't created a backup yet (not an error)
-- **401**: User has a backup but provided wrong password
-- **404**: The authenticated user somehow doesn't exist (should rarely happen)
+- 200 (Success - backup found or informative message if no backup)
+- 401 (Unauthorized - Invalid password)
+- 404 (User not found)
+- 400 (Bad Request)
 
 **Note:** The password provided must match the original password used for encryption. The server verifies the password hash but never decrypts the private key - decryption is handled client-side for security.
 
@@ -481,43 +457,6 @@ Check the cryptographic setup status for the authenticated user.
 - 400 (Bad Request)
 
 **Note:** This endpoint helps frontends determine what cryptographic setup steps are still needed without requiring passwords.
-
-### Understanding Encryption Setup vs User Existence
-
-It's important for frontends to distinguish between different scenarios when dealing with encryption:
-
-#### User Not Found (404 errors)
-- The user ID doesn't exist in the system
-- Should be treated as an error condition
-- User may have been deleted or ID is invalid
-
-#### User Exists But No Encryption Setup (200 with null/false values)
-- The user exists and is valid
-- They simply haven't set up encryption yet
-- This is a normal state for new users
-- Frontend should offer setup options, not show errors
-
-#### User Has Encryption Setup (200 with actual data)
-- User exists and has completed encryption setup
-- Ready for secure messaging
-- All encryption operations can proceed
-
-**Example Frontend Logic:**
-```javascript
-// Good approach
-if (response.status === 404) {
-  showError("User not found");
-} else if (response.data.setup_status === "not_setup") {
-  showSetupPrompt("This user hasn't enabled secure messaging yet");
-} else {
-  proceedWithEncryption(response.data.public_key);
-}
-
-// Avoid this - treating missing encryption as an error
-if (!response.data.public_key) {
-  showError("Encryption not available"); // ❌ Confusing for users
-}
-```
 
 ### Password Management
 

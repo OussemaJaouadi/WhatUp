@@ -93,12 +93,12 @@ const EditUserModal: React.FC<EditUserModalProps> = ({
                           <div
                             className="relative cursor-pointer"
                             onClick={() => {
-                              setCurrentPreviewImage(img.image_key ? `${objectStorageBaseUrl}/${img.image_key}` : "/placeholder.svg");
+                              setCurrentPreviewImage(img.image_key ? `${objectStorageBaseUrl}/${img.image_key}` : "/default-avatar.svg");
                               setOpenPreview(true);
                             }}
                           >
                             <img
-                              src={img.image_key ? `${objectStorageBaseUrl}/${img.image_key}` : "/placeholder.svg"}
+                              src={img.image_key ? `${objectStorageBaseUrl}/${img.image_key}` : "/default-avatar.svg"}
                               alt="Profile"
                               className={`h-20 w-20 rounded-xl object-cover border-2 ${img.is_active ? 'border-primary shadow-md glow-yellow' : 'border-border'} transition-all mb-1`}
                             />

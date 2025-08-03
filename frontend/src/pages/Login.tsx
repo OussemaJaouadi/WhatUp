@@ -7,9 +7,13 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { authService } from "@/services/auth";
+import { useEncryptionSetup } from "@/hooks/useEncryptionSetup";
+import { userService } from "@/services/user";
 import { animate, createScope } from "animejs";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { authUtils } from "@/lib/authUtils";
+import { PrivateKeyRecoveryModal } from "@/components/modals/PrivateKeyRecoveryModal";
+import { keyStorage } from "@/lib/keyStorage";
 
 export default function Login() {
   const [email, setEmail] = useState("");
@@ -18,10 +22,13 @@ export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [loginType, setLoginType] = useState<'user' | 'admin'>('user');
   const [identifier, setIdentifier] = useState(""); // email or username
+  const [showRecoveryModal, setShowRecoveryModal] = useState(false);
+  const [userInfo, setUserInfo] = useState<{ id: string; username: string } | null>(null);
   const { toast } = useToast();
   const navigate = useNavigate();
   const cardRef = useRef<HTMLDivElement>(null);
   const scope = useRef<ReturnType<typeof createScope> | null>(null);
+  const { ensurePrivateKeyAvailable } = useEncryptionSetup();
 
   useEffect(() => {
     if (!cardRef.current) return;
@@ -61,11 +68,33 @@ export default function Login() {
     setIsLoading(true);
 
     try {
-      // For admin, you may want to add a role field or endpoint logic, but for now just pass identifier and password
+      // Clear any residual tokens before attempting login
+      authUtils.removeToken();
+      authUtils.removeTempLoginPassword();
+      
+      // Login to get authentication token
       const response = await authService.login(identifier, password);
       
       if (response.access_token) {
         authUtils.setToken(response.access_token);
+        
+        // Get user profile to get user ID
+        const userProfile = await userService.getMe();
+        
+        // Check if private key exists locally
+        const existingPrivateKey = await keyStorage.getPrivateKey(userProfile.id);
+        
+        if (!existingPrivateKey && userProfile.public_key) {
+          // User has encryption setup but no private key locally
+          // This means they're on a new device and need to recover
+          setUserInfo({ id: userProfile.id, username: userProfile.username });
+          setShowRecoveryModal(true);
+          setIsLoading(false);
+          return;
+        }
+        
+        // Clean up stored password
+        localStorage.removeItem('temp_login_password');
         
         animate('.login-card', {
           scale: [1, 1.02, 1],
@@ -75,6 +104,7 @@ export default function Login() {
             toast({
               title: "Welcome back! 🎯",
               description: "Ready to catch up with the gang?",
+              className: "border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-800 dark:bg-blue-950/50 dark:text-blue-200",
             });
             navigate("/dashboard");
           }
@@ -109,6 +139,26 @@ export default function Login() {
     if (value === 'user' || value === 'admin') {
       setLoginType(value);
     }
+  };
+
+  const handleRecoverySuccess = () => {
+    setShowRecoveryModal(false);
+    toast({
+      title: "Welcome back! 🎯",
+      description: "Your encryption keys have been recovered. Ready to catch up with the gang?",
+      className: "border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-950/50 dark:text-green-200",
+    });
+    navigate("/dashboard");
+  };
+
+  const handleRecoverySkip = () => {
+    setShowRecoveryModal(false);
+    toast({
+      title: "Welcome back! 🎯",
+      description: "You can recover your keys later from your profile settings.",
+      className: "border-blue-200 bg-blue-50 text-blue-800 dark:border-blue-800 dark:bg-blue-950/50 dark:text-blue-200",
+    });
+    navigate("/dashboard");
   };
 
   return (
@@ -270,6 +320,17 @@ export default function Login() {
           </CardContent>
         </Card>
       </div>
+      
+      {/* Private Key Recovery Modal for new device logins */}
+      {userInfo && (
+        <PrivateKeyRecoveryModal
+          isOpen={showRecoveryModal}
+          onClose={handleRecoverySkip}
+          onSuccess={handleRecoverySuccess}
+          userId={userInfo.id}
+          userName={userInfo.username}
+        />
+      )}
     </div>
   );
 }

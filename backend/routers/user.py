@@ -2,7 +2,7 @@ from fastapi import APIRouter, UploadFile, File, HTTPException, status, Request,
 from typing import Optional
 from uuid import UUID
 from pydantic import EmailStr
-from dto.user import UserCreate, UserResponseDto, UserResponseAdminDto, UserUpdatePublicKey, UserLogin, UserAdminEdit, UserRole, UserResponseAdminListDto
+from dto.user import UserCreate, UserResponseDto, UserResponseAdminDto, UserUpdatePublicKey, UserLogin, UserAdminEdit, UserRole, UserResponseAdminListDto, PrivateKeyBackupUpload, PrivateKeyBackupRequest
 from dto.user_image import UserImageResponseDto
 from fastapi.responses import Response
 from services.user_service import UserService
@@ -39,21 +39,28 @@ class UserRoutes:
         self.router.add_api_route("/public-key/{user_id}", self.get_public_key, methods=["GET"], response_model=dict)
         self.router.add_api_route("/search", self.get_user_by_username, methods=["GET"], response_model=UserResponseDto)
         self.router.add_api_route("/private-key-backup", self.upload_private_key_backup, methods=["PUT"], response_model=dict)
-        self.router.add_api_route("/private-key-backup", self.get_private_key_backup, methods=["GET"], response_model=dict)
+        self.router.add_api_route("/private-key-backup", self.get_private_key_backup, methods=["POST"], response_model=dict)
+        self.router.add_api_route("/crypto-setup-status", self.get_crypto_setup_status, methods=["GET"], response_model=dict)
 
     @requires_no_auth
-    async def register(self, username: str = Form(...), email: EmailStr = Form(...), password: str = Form(...), file: Optional[UploadFile] = None):
-        user_data = UserCreate(username=username, email=email, password=password)
-        image_bytes = await file.read() if file else None
+    async def register(self, request: Request, username: str = Form(...), email: EmailStr = Form(...), password: str = Form(...), file: Optional[UploadFile] = File(None)):
         try:
+            user_data = UserCreate(username=username, email=email, password=password)
+            image_bytes = None
+            if file and file.filename:
+                image_bytes = await file.read()
             user = await self.user_service.register_user(user_data, image_bytes)
             # The register_user now handles image upload and setting active_avatar_url
             return UserResponseDto.model_validate(user.__dict__)
+        except ImageSecurityError as e:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=f"Image error: {str(e)}")
         except ValueError as e:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+        except Exception as e:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR, detail=f"Internal server error: {str(e)}")
 
     @requires_no_auth
-    async def login(self, user_login: UserLogin, request: Request):
+    async def login(self, request: Request, user_login: UserLogin):
         try:
             token_data = await self.user_service.login_user(user_login)
             return token_data
@@ -215,7 +222,7 @@ class UserRoutes:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
     @requires_no_auth
-    async def request_password_reset(self, email: str):
+    async def request_password_reset(self, request: Request, email: EmailStr = Form(...)):
         try:
             await self.user_service.request_password_reset(email)
             return {"detail": "Password reset email sent if user exists."}
@@ -223,14 +230,15 @@ class UserRoutes:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
     @requires_no_auth
-    async def reset_password(self, token: str, new_password: str, confirm_password: str):
+    async def reset_password(self, request: Request, token: str = Form(...), new_password: str = Form(...), confirm_password: str = Form(...)):
         try:
             await self.user_service.reset_password(token, new_password, confirm_password)
             return {"detail": "Password has been reset successfully."}
         except ValueError as e:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-    async def confirm_account(self, token: str):
+    @requires_no_auth
+    async def confirm_account(self, request: Request, token: str):
         try:
             await self.user_service.confirm_account(token)
             return {"detail": "Account confirmed successfully."}
@@ -251,9 +259,12 @@ class UserRoutes:
         try:
             public_key = await self.user_service.get_public_key(user_id)
             if not public_key:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Public key not found for this user.")
+                # User exists but hasn't set up a public key yet
+                return {"public_key": None, "message": "User has not set up a public key yet"}
             return {"public_key": public_key}
         except ValueError as e:
+            if "User not found" in str(e):
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
     @requires_auth
@@ -265,29 +276,48 @@ class UserRoutes:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     
     @requires_auth
-    async def upload_private_key_backup(self, request: Request, backup_data: dict) -> dict:
+    async def upload_private_key_backup(self, request: Request, backup_data: PrivateKeyBackupUpload) -> dict:
         """
         Upload encrypted private key backup for the authenticated user.
-        Expects: { encrypted_private_key, salt, iv }
+        Expects: { encrypted_private_key, salt, iv, password }
         """
         user_id = request.state.user.sub
         try:
-            await self.user_service.set_private_key_backup(user_id, backup_data)
+            await self.user_service.set_private_key_backup(user_id, backup_data.model_dump())
             return {"detail": "Encrypted private key backup stored successfully."}
         except ValueError as e:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
     @requires_auth
-    async def get_private_key_backup(self, request: Request) -> dict:
+    async def get_private_key_backup(self, request: Request, password_data: PrivateKeyBackupRequest) -> dict:
         """
-        Retrieve encrypted private key backup for the authenticated user.
+        Retrieve encrypted private key backup for the authenticated user after password verification.
+        Requires password verification.
         Returns: { encrypted_private_key, salt, iv }
         """
         user_id = request.state.user.sub
         try:
-            backup = await self.user_service.get_private_key_backup(user_id)
+            backup = await self.user_service.get_private_key_backup(user_id, password_data.password)
             if not backup:
-                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No backup found for this user.")
+                # User exists but hasn't set up a private key backup yet
+                return {"message": "No private key backup found. Please create a backup first.", "backup_exists": False}
             return backup
+        except ValueError as e:
+            if "Invalid password" in str(e):
+                raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail=str(e))
+            if "User not found" in str(e):
+                raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
+
+    @requires_auth
+    async def get_crypto_setup_status(self, request: Request) -> dict:
+        """
+        Check if user has set up their cryptographic keys and backup.
+        Returns setup status without requiring passwords.
+        """
+        user_id = request.state.user.sub
+        try:
+            status = await self.user_service.get_crypto_setup_status(user_id)
+            return status
         except ValueError as e:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))

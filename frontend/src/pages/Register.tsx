@@ -7,6 +7,8 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { useToast } from "@/hooks/use-toast";
 import { authService } from "@/services/auth";
+import { authUtils } from "@/lib/authUtils";
+import { useEncryptionSetup } from "@/hooks/useEncryptionSetup";
 import { animate, createScope } from "animejs";
 
 function Register() {
@@ -35,6 +37,7 @@ function Register() {
   const navigate = useNavigate();
   const { toast } = useToast();
   const scope = useRef<ReturnType<typeof createScope> | null>(null);
+  const { setupEncryptionForNewUser } = useEncryptionSetup();
 
   const handleRegister = async () => {
     if (formData.password !== formData.confirmPassword) {
@@ -50,13 +53,24 @@ function Register() {
       });
       return;
     }
+    
     setIsLoading(true);
     try {
-      await authService.register({
+      // Clear any residual tokens before attempting registration
+      authUtils.removeToken();
+      authUtils.removeTempLoginPassword();
+      
+      // Register the user
+      const registrationResult = await authService.register({
         username: formData.username,
         email: formData.email,
         password: formData.password,
       });
+
+      // Automatically setup encryption with their password
+      if (registrationResult.id) {
+        await setupEncryptionForNewUser(registrationResult.id, formData.password);
+      }
 
       animate('.register-card', {
         scale: [1, 1.02, 1],
@@ -65,36 +79,23 @@ function Register() {
         complete: () => {
           toast({
             title: "Account Created! 🎉",
-            description: "Welcome to the gang! Please check your email to verify your account.",
+            description: "Welcome to the gang! Secure messaging enabled. Please check your email to verify your account.",
+            className: "border-green-200 bg-green-50 text-green-800 dark:border-green-800 dark:bg-green-950/50 dark:text-green-200",
           });
           navigate("/login");
         }
       });
     } catch (error: any) {
-      if (error.message && error.message.includes("key generation")) {
-        toast({
-          variant: "destructive",
-          title: "Key Generation Failed",
-          description: "Could not generate cryptographic keys. Please try again.",
-        });
-      } else if (error.message && error.message.includes("public key upload")) {
-        toast({
-          variant: "destructive",
-          title: "Public Key Upload Failed",
-          description: "Account created, but could not upload public key. Please try logging in.",
-        });
-      } else {
-        animate('.register-card', {
-          translateX: [-8, 8, -6, 6, -4, 4, -2, 2, 0],
-          duration: 500,
-          ease: 'out(2)'
-        });
-        toast({
-          variant: "destructive",
-          title: "Registration Failed",
-          description: error.response?.data?.detail || "Please try again with different credentials.",
-        });
-      }
+      animate('.register-card', {
+        translateX: [-8, 8, -6, 6, -4, 4, -2, 2, 0],
+        duration: 500,
+        ease: 'out(2)'
+      });
+      toast({
+        variant: "destructive", 
+        title: "Registration Failed",
+        description: error.response?.data?.detail || "Please try again with different credentials.",
+      });
     } finally {
       setIsLoading(false);
     }

@@ -2,6 +2,7 @@ import { jwtDecode } from 'jwt-decode';
 import { DecodedToken } from '@/types/auth';
 
 const TOKEN_KEY = "jwt_token";
+const LOGIN_PASSWORD_KEY = "temp_login_password";
 
 export const authUtils = {
   setToken: (token: string) => {
@@ -14,6 +15,8 @@ export const authUtils = {
 
   removeToken: () => {
     localStorage.removeItem(TOKEN_KEY);
+    // Also remove the temporary password when removing token
+    localStorage.removeItem(LOGIN_PASSWORD_KEY);
   },
 
   decodeToken: (token: string): DecodedToken | null => {
@@ -32,5 +35,18 @@ export const authUtils = {
       return decodedToken?.role || null;
     }
     return null;
+  },
+
+  // Temporarily store login password for key generation (should be removed after use)
+  setTempLoginPassword: (password: string) => {
+    localStorage.setItem(LOGIN_PASSWORD_KEY, password);
+  },
+
+  getStoredLoginPassword: (): string | null => {
+    return localStorage.getItem(LOGIN_PASSWORD_KEY);
+  },
+
+  removeTempLoginPassword: () => {
+    localStorage.removeItem(LOGIN_PASSWORD_KEY);
   },
 };

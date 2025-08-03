@@ -25,7 +25,7 @@ const ViewUserModal: React.FC<ViewUserModalProps> = ({ user, profileImages, onCl
             <div className="space-y-4">
               <div className="flex items-center gap-4">
                 <img
-                  src={user.active_avatar_url ? `${objectStorageBaseUrl}/${user.active_avatar_url}` : "/placeholder.svg"}
+                  src={user.active_avatar_url ? `${objectStorageBaseUrl}/${user.active_avatar_url}` : "/default-avatar.svg"}
                   alt={user.username}
                   className="h-20 w-20 rounded-full object-cover border-2 border-primary shadow-md"
                 />
@@ -60,12 +60,12 @@ const ViewUserModal: React.FC<ViewUserModalProps> = ({ user, profileImages, onCl
                             <div
                               className="relative cursor-pointer"
                               onClick={() => {
-                                setCurrentPreviewImage(img.image_key ? `${objectStorageBaseUrl}/${img.image_key}` : "/placeholder.svg");
+                                setCurrentPreviewImage(img.image_key ? `${objectStorageBaseUrl}/${img.image_key}` : "/default-avatar.svg");
                                 setOpenPreview(true);
                               }}
                             >
                               <img
-                                src={img.image_key ? `${objectStorageBaseUrl}/${img.image_key}` : "/placeholder.svg"}
+                                src={img.image_key ? `${objectStorageBaseUrl}/${img.image_key}` : "/default-avatar.svg"}
                                 alt="Profile"
                                 className={`h-20 w-20 rounded-xl object-cover border-2 ${img.is_active ? 'border-primary shadow-md glow-yellow' : 'border-border'} transition-all mb-1`}
                               />
