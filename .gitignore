@@ -16,3 +16,4 @@ error.log
 prds/*
 REPOSITORY_ANALYSIS.md
 prompt.md
+.env
