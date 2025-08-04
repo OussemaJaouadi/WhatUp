@@ -1,24 +1,34 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Card } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
-import { Users, Crown, CheckCircle, XCircle, Settings, Shield, Edit3, Upload, Eye, User as UserIcon } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
-import { useToast } from "@/hooks/use-toast";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { 
+  Users, 
+  Crown, 
+  CheckCircle, 
+  XCircle, 
+  Settings, 
+  Shield, 
+  Edit3, 
+  Eye, 
+  User as UserIcon,
+  Search,
+  Trash2,
+  Activity,
+  Database
+} from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
 import { UserResponseAdminDto, UserRole, UserAdminEdit } from "@/types/user";
 import { UserImageResponseDto } from "@/types/userImage";
-import { EditUserModalProps, ViewUserModalProps } from "@/types/modal";
 import { userService } from "@/services/user";
 import { getObjectStorageBaseUrl } from "@/lib/env";
 import EditUserModal from "@/components/modals/EditUserModal";
 import ViewUserModal from "@/components/modals/ViewUserModal";
 import { authUtils } from "@/lib/authUtils";
-
-
 
 const Admin = () => {
   const objectStorageBaseUrl = getObjectStorageBaseUrl();
@@ -36,21 +46,19 @@ const Admin = () => {
   const [selectedUserProfileImages, setSelectedUserProfileImages] = useState<UserImageResponseDto[]>([]);
   const [currentUserId, setCurrentUserId] = useState<string | null>(null);
 
+  const fetchUsers = useCallback(async () => {
+    try {
+      const response = await userService.getAllUsers();
+      setUsers(response);
+    } catch (error) {
+      toast({
+        title: "Error fetching users",
+        description: (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || "An unexpected error occurred.",
+        variant: "destructive",
+      });
+    }
+  }, [toast]);
 
-const fetchUsers = useCallback(async () => {
-  try {
-    const response = await userService.getAllUsers();
-    setUsers(response);
-  } catch (error) {
-    toast({
-      title: "Error fetching users",
-      description: (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || "An unexpected error occurred.",
-      variant: "destructive",
-    });
-  }
-}, [toast]);
-
-  // Fetch users on mount
   useEffect(() => {
     fetchUsers();
     const token = authUtils.getToken();
@@ -62,49 +70,49 @@ const fetchUsers = useCallback(async () => {
     }
   }, [fetchUsers]);
 
-const handleEditUserOpen = async (user: UserResponseAdminDto) => {
-  try {
-    const fullUser = await userService.getUserById(user.id);
-    setSelectedUser(fullUser);
-    setEditRole(fullUser.role);
-    setEditAccountConfirmed(fullUser.account_confirmed);
-    setEditBio(fullUser.bio || null);
-    fetchUserProfileImages(fullUser.id);
-  } catch (error) {
-    toast({
-      title: "Error fetching user details",
-      description: (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || "An unexpected error occurred.",
-      variant: "destructive",
-    });
-  }
-};
+  const handleEditUserOpen = async (user: UserResponseAdminDto) => {
+    try {
+      const fullUser = await userService.getUserById(user.id);
+      setSelectedUser(fullUser);
+      setEditRole(fullUser.role);
+      setEditAccountConfirmed(fullUser.account_confirmed);
+      setEditBio(fullUser.bio || null);
+      fetchUserProfileImages(fullUser.id);
+    } catch (error) {
+      toast({
+        title: "Error fetching user details",
+        description: (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || "An unexpected error occurred.",
+        variant: "destructive",
+      });
+    }
+  };
 
-const handleViewUserOpen = async (user: UserResponseAdminDto) => {
-  try {
-    const fullUser = await userService.getUserById(user.id);
-    setViewUser(fullUser);
-    fetchUserProfileImages(fullUser.id);
-  } catch (error) {
-    toast({
-      title: "Error fetching user details",
-      description: (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || "An unexpected error occurred.",
-      variant: "destructive",
-    });
-  }
-};
+  const handleViewUserOpen = async (user: UserResponseAdminDto) => {
+    try {
+      const fullUser = await userService.getUserById(user.id);
+      setViewUser(fullUser);
+      fetchUserProfileImages(fullUser.id);
+    } catch (error) {
+      toast({
+        title: "Error fetching user details",
+        description: (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || "An unexpected error occurred.",
+        variant: "destructive",
+      });
+    }
+  };
 
-const fetchUserProfileImages = useCallback(async (userId: string) => {
-  try {
-    const images: UserImageResponseDto[] = await userService.adminGetUserProfileImages(userId);
-    setSelectedUserProfileImages(images);
-  } catch (error) {
-    toast({
-      title: "Error fetching user profile images",
-      description: (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || "An unexpected error occurred.",
-      variant: "destructive",
-    });
-  }
-}, [toast]);
+  const fetchUserProfileImages = useCallback(async (userId: string) => {
+    try {
+      const images: UserImageResponseDto[] = await userService.adminGetUserProfileImages(userId);
+      setSelectedUserProfileImages(images);
+    } catch (error) {
+      toast({
+        title: "Error fetching user profile images",
+        description: (error as { response?: { data?: { detail?: string } } }).response?.data?.detail || "An unexpected error occurred.",
+        variant: "destructive",
+      });
+    }
+  }, [toast]);
 
   const handleEditUser = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -117,9 +125,8 @@ const fetchUserProfileImages = useCallback(async (userId: string) => {
       };
       await userService.adminEditUser(selectedUser.id, userData, editProfileImage ?? undefined);
       toast({
-        title: "Edit User",
-        description: `User changes saved successfully!`,
-        variant: "default",
+        title: "User updated",
+        description: "User information has been saved successfully.",
       });
       setSelectedUser(null);
       fetchUsers();
@@ -136,9 +143,8 @@ const fetchUserProfileImages = useCallback(async (userId: string) => {
     try {
       await userService.adminDeleteUser(userId);
       toast({
-        title: "Delete User",
-        description: `User deleted successfully!`,
-        variant: "default",
+        title: "User deleted",
+        description: "User account has been permanently deleted.",
       });
       fetchUsers();
     } catch (error) {
@@ -150,173 +156,301 @@ const fetchUserProfileImages = useCallback(async (userId: string) => {
     }
   };
 
-const filteredUsers = users.filter(
+  const filteredUsers = users.filter(
     (user) =>
       user.username.toLowerCase().includes(searchQuery.toLowerCase()) ||
       user.email.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
-const stats = {
-  totalUsers: filteredUsers.length,
-  activeUsers: filteredUsers.filter(u => u.account_confirmed).length,
-  adminUsers: filteredUsers.filter(u => u.role === "admin").length,
-  pendingUsers: filteredUsers.filter(u => !u.account_confirmed).length,
-};
+  const stats = {
+    totalUsers: users.length,
+    activeUsers: users.filter(u => u.account_confirmed).length,
+    adminUsers: users.filter(u => u.role === "admin").length,
+    pendingUsers: users.filter(u => !u.account_confirmed).length,
+  };
 
   return (
-    <div className="min-h-screen gradient-cozy bg-background text-foreground dark:bg-background-dark dark:text-foreground-dark">
-      <main className="max-w-7xl mx-auto p-6">
+    <div className="min-h-[calc(100vh-80px)] bg-slate-50 dark:bg-slate-900">
+      <div className="max-w-7xl mx-auto p-6">
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-slate-100 mb-2">
+            Admin Dashboard
+          </h1>
+          <p className="text-slate-600 dark:text-slate-400">
+            Manage users, settings, and monitor system activity
+          </p>
+        </div>
+
         {/* Stats Overview */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Card className="card-cozy text-center bg-card/90 dark:bg-[#23243a] backdrop-blur-sm border border-border/70 dark:border-transparent shadow-cozy dark:shadow-[0_2px_16px_0_rgba(0,0,0,0.30)] transition-colors">
-            <Users className="h-8 w-8 text-accent mx-auto mb-2" />
-            <div className="text-2xl font-crimson font-bold">{stats.totalUsers}</div>
-            <div className="text-sm text-muted-foreground">Total Users</div>
+          <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+            <CardContent className="p-6 text-center">
+              <Users className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+              <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalUsers}</div>
+              <div className="text-sm text-slate-600 dark:text-slate-400">Total Users</div>
+            </CardContent>
           </Card>
-          <Card className="card-cozy text-center bg-card/90 dark:bg-[#23243a] backdrop-blur-sm border border-border/70 dark:border-transparent shadow-cozy dark:shadow-[0_2px_16px_0_rgba(0,0,0,0.30)] transition-colors">
-            <CheckCircle className="h-8 w-8 text-green-500 mx-auto mb-2" />
-            <div className="text-2xl font-crimson font-bold">{stats.activeUsers}</div>
-            <div className="text-sm text-muted-foreground">Active Users</div>
+          
+          <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+            <CardContent className="p-6 text-center">
+              <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
+              <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.activeUsers}</div>
+              <div className="text-sm text-slate-600 dark:text-slate-400">Active Users</div>
+            </CardContent>
           </Card>
-          <Card className="card-cozy text-center bg-card/90 dark:bg-[#23243a] backdrop-blur-sm border border-border/70 dark:border-transparent shadow-cozy dark:shadow-[0_2px_16px_0_rgba(0,0,0,0.30)] transition-colors">
-            <Crown className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
-            <div className="text-2xl font-crimson font-bold">{stats.adminUsers}</div>
-            <div className="text-sm text-muted-foreground">Admins</div>
+          
+          <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+            <CardContent className="p-6 text-center">
+              <Crown className="h-8 w-8 text-amber-600 mx-auto mb-2" />
+              <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.adminUsers}</div>
+              <div className="text-sm text-slate-600 dark:text-slate-400">Admins</div>
+            </CardContent>
           </Card>
-          <Card className="card-cozy text-center bg-card/90 dark:bg-[#23243a] backdrop-blur-sm border border-border/70 dark:border-transparent shadow-cozy dark:shadow-[0_2px_16px_0_rgba(0,0,0,0.30)] transition-colors">
-            <XCircle className="h-8 w-8 text-yellow-500 mx-auto mb-2" />
-            <div className="text-2xl font-crimson font-bold">{stats.pendingUsers}</div>
-            <div className="text-sm text-muted-foreground">Pending</div>
+          
+          <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+            <CardContent className="p-6 text-center">
+              <XCircle className="h-8 w-8 text-orange-600 mx-auto mb-2" />
+              <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.pendingUsers}</div>
+              <div className="text-sm text-slate-600 dark:text-slate-400">Pending</div>
+            </CardContent>
           </Card>
         </div>
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
-          <TabsList className="grid w-full grid-cols-3 mb-6 bg-card/80 dark:bg-[#23243a] backdrop-blur-sm border border-border/70 dark:border-transparent shadow-cozy rounded-lg p-1">
-            <TabsTrigger value="users" className="flex items-center space-x-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm rounded-md py-2 px-4 transition-all duration-300">
+          <TabsList className="grid w-full grid-cols-3 mb-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
+            <TabsTrigger value="users" className="flex items-center space-x-2">
               <Users className="h-4 w-4" />
-              <span>User Management</span>
+              <span>Users</span>
             </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center space-x-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm rounded-md py-2 px-4 transition-all duration-300">
-              <Settings className="h-4 w-4" />
-              <span>System Settings</span>
+            <TabsTrigger value="settings" className="flex items-center space-x-2">
+              <Database className="h-4 w-4" />
+              <span>System</span>
             </TabsTrigger>
-            <TabsTrigger value="logs" className="flex items-center space-x-2 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground data-[state=active]:shadow-sm rounded-md py-2 px-4 transition-all duration-300">
-              <Shield className="h-4 w-4" />
-              <span>Activity Logs</span>
+            <TabsTrigger value="logs" className="flex items-center space-x-2">
+              <Activity className="h-4 w-4" />
+              <span>Activity</span>
             </TabsTrigger>
           </TabsList>
 
           {/* Users Tab */}
           <TabsContent value="users">
-            <div className="space-y-6">
-              <Card className="card-cozy dark:bg-card-dark dark:text-card-foreground-dark flex flex-col sm:flex-row gap-4 items-center justify-between">
-                <div className="flex flex-col gap-2 w-full sm:w-auto">
-                  <div className="flex flex-col gap-2 w-full sm:w-auto">
-                    <Input placeholder="Search users..." className="w-full sm:w-64 input-cozy" value={searchQuery} onChange={(e) => setSearchQuery(e.target.value)} />
+            <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+              <CardHeader>
+                <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between space-y-4 sm:space-y-0">
+                  <div>
+                    <CardTitle>User Management</CardTitle>
+                    <CardDescription>View and manage all user accounts</CardDescription>
+                  </div>
+                  <div className="relative w-full sm:w-64">
+                    <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
+                    <Input 
+                      placeholder="Search users..." 
+                      value={searchQuery} 
+                      onChange={(e) => setSearchQuery(e.target.value)}
+                      className="pl-10"
+                    />
                   </div>
                 </div>
-              </Card>
-              <Card className="card-cozy dark:bg-card-dark dark:text-card-foreground-dark">
-                <div className="space-y-4">
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-3">
                   {filteredUsers.length === 0 ? (
-                    <p className="text-center text-muted-foreground">No users found.</p>
+                    <div className="text-center py-8 text-slate-500 dark:text-slate-400">
+                      <Users className="h-12 w-12 mx-auto mb-3 opacity-50" />
+                      <p>No users found</p>
+                    </div>
                   ) : (
                     filteredUsers.map((user) => (
-                      <Card key={user.id} className={`flex items-center justify-between p-4 rounded-lg bg-card/80 hover:bg-muted/60 dark:bg-[#23243a] dark:hover:bg-[#23243a]/80 dark:text-slate-100 dark:shadow-[0_1px_4px_0_rgba(0,0,0,0.18)] transition-all animate-cozy-slide-up ${user.id === currentUserId ? 'border-2 border-primary shadow-lg' : ''}`}>
-                        <div className="flex items-center gap-3">
-                          {user.active_avatar_url ? (
-                            <img
-                              src={`${objectStorageBaseUrl}/${user.active_avatar_url}`}
-                              alt={user.username}
-                              className="h-10 w-10 rounded-full object-cover border border-border"
+                      <div 
+                        key={user.id} 
+                        className={`flex items-center justify-between p-4 rounded-lg border transition-colors ${
+                          user.id === currentUserId 
+                            ? 'border-blue-200 bg-blue-50 dark:border-blue-800 dark:bg-blue-900/20' 
+                            : 'border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700'
+                        }`}
+                      >
+                        <div className="flex items-center space-x-4">
+                          <Avatar className="h-12 w-12">
+                            <AvatarImage 
+                              src={user.active_avatar_url ? `${objectStorageBaseUrl}/${user.active_avatar_url}` : '/default-avatar.svg'} 
                             />
-                          ) : (
-                            <div className="h-10 w-10 rounded-full bg-muted flex items-center justify-center border border-border">
-                              <UserIcon className="h-6 w-6 text-muted-foreground" />
+                            <AvatarFallback className="bg-slate-100 dark:bg-slate-700">
+                              {user.username.slice(0, 2).toUpperCase()}
+                            </AvatarFallback>
+                          </Avatar>
+                          
+                          <div className="flex-1">
+                            <div className="flex items-center space-x-2 mb-1">
+                              <h3 className="font-semibold text-slate-900 dark:text-slate-100">
+                                @{user.username}
+                              </h3>
+                              {user.role === "admin" && (
+                                <Badge className="bg-amber-100 text-amber-800 dark:bg-amber-900 dark:text-amber-200">
+                                  <Crown className="h-3 w-3 mr-1" />
+                                  Admin
+                                </Badge>
+                              )}
+                              {user.id === currentUserId && (
+                                <Badge variant="outline" className="text-blue-600 border-blue-200">
+                                  You
+                                </Badge>
+                              )}
                             </div>
-                          )}
-                          <div>
-                            <p className="font-medium">@{user.username}</p>
-                            <p className="text-xs text-muted-foreground">{user.email}</p>
+                            <p className="text-sm text-slate-600 dark:text-slate-400">{user.email}</p>
+                            <div className="flex items-center space-x-4 mt-1">
+                              <div className="flex items-center space-x-1">
+                                <div className={`w-2 h-2 rounded-full ${user.account_confirmed ? 'bg-green-500' : 'bg-orange-500'}`} />
+                                <span className="text-xs text-slate-500 dark:text-slate-400">
+                                  {user.account_confirmed ? 'Verified' : 'Pending'}
+                                </span>
+                              </div>
+                              <span className="text-xs text-slate-500 dark:text-slate-400">
+                                Joined {new Date(user.created_at).toLocaleDateString()}
+                              </span>
+                            </div>
                           </div>
                         </div>
-                        <div className="flex gap-2">
-                          <Button size="sm" variant="ghost" onClick={() => handleViewUserOpen(user)} title="View">
-                            <Eye className="h-5 w-5 text-accent" />
+                        
+                        <div className="flex items-center space-x-2">
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => handleViewUserOpen(user)}
+                          >
+                            <Eye className="h-4 w-4" />
                           </Button>
-                          <Button size="sm" variant="outline" onClick={() => handleEditUserOpen(user)} title="Edit">
-                            <Edit3 className="h-5 w-5 text-primary" />
+                          <Button 
+                            size="sm" 
+                            variant="outline" 
+                            onClick={() => handleEditUserOpen(user)}
+                          >
+                            <Edit3 className="h-4 w-4" />
                           </Button>
-                          <Button size="sm" variant="destructive" onClick={() => handleDeleteUser(user.id)}>
-                            Delete
-                          </Button>
+                          {user.id !== currentUserId && (
+                            <Button 
+                              size="sm" 
+                              variant="destructive" 
+                              onClick={() => handleDeleteUser(user.id)}
+                            >
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          )}
                         </div>
-                      </Card>
+                      </div>
                     ))
                   )}
                 </div>
-              </Card>
-            </div>
-          </TabsContent>
-
-          {/* Settings Tab */}
-          <TabsContent value="settings">
-            <Card className="card-cozy">
-              <div className="flex items-center space-x-3 mb-6">
-                <Settings className="h-5 w-5 text-accent" />
-                <h2 className="text-xl font-crimson font-semibold">System Settings</h2>
-              </div>
-              <div className="space-y-6">
-                <div className="grid sm:grid-cols-2 gap-6">
-                  <div className="space-y-2">
-                    <Label htmlFor="app-name">Application Name</Label>
-                    <Input id="app-name" defaultValue="WhatUp" className="input-cozy" />
-                  </div>
-                  <div className="space-y-2">
-                    <Label htmlFor="max-users">Max Users</Label>
-                    <Input id="max-users" type="number" defaultValue={1000} className="input-cozy" />
-                  </div>
-                  <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-card/80">
-                    <Label htmlFor="enable-registration" className="font-medium">Enable New Registrations</Label>
-                    <Switch id="enable-registration" defaultChecked />
-                  </div>
-                  <div className="flex items-center justify-between p-3 rounded-lg border border-border bg-card/80">
-                    <Label htmlFor="email-verification" className="font-medium">Require Email Verification</Label>
-                    <Switch id="email-verification" />
-                  </div>
-                </div>
-                <Button className="btn-primary">Save Settings</Button>
-              </div>
+              </CardContent>
             </Card>
           </TabsContent>
 
-          {/* Logs Tab */}
+          {/* System Settings Tab */}
+          <TabsContent value="settings">
+            <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Database className="h-5 w-5 text-blue-600" />
+                  <span>System Configuration</span>
+                </CardTitle>
+                <CardDescription>
+                  Configure application settings and preferences
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid sm:grid-cols-2 gap-6">
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-slate-900 dark:text-slate-100">Application Settings</h3>
+                    <div className="space-y-3">
+                      <div className="space-y-2">
+                        <Label htmlFor="app-name">Application Name</Label>
+                        <Input id="app-name" defaultValue="WhatUp" />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="max-users">Maximum Users</Label>
+                        <Input id="max-users" type="number" defaultValue="1000" />
+                      </div>
+                    </div>
+                  </div>
+                  
+                  <div className="space-y-4">
+                    <h3 className="font-semibold text-slate-900 dark:text-slate-100">Security Settings</h3>
+                    <div className="space-y-3">
+                      <div className="flex items-center justify-between p-3 border border-slate-200 dark:border-slate-700 rounded-lg">
+                        <div>
+                          <Label className="font-medium">New Registrations</Label>
+                          <p className="text-sm text-slate-600 dark:text-slate-400">Allow new users to register</p>
+                        </div>
+                        <input type="checkbox" defaultChecked className="rounded" />
+                      </div>
+                      <div className="flex items-center justify-between p-3 border border-slate-200 dark:border-slate-700 rounded-lg">
+                        <div>
+                          <Label className="font-medium">Email Verification</Label>
+                          <p className="text-sm text-slate-600 dark:text-slate-400">Require email verification</p>
+                        </div>
+                        <input type="checkbox" className="rounded" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className="pt-4 border-t border-slate-200 dark:border-slate-700">
+                  <Button className="bg-blue-600 hover:bg-blue-700 text-white">
+                    <Settings className="h-4 w-4 mr-2" />
+                    Save Settings
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </TabsContent>
+
+          {/* Activity Logs Tab */}
           <TabsContent value="logs">
-            <Card className="card-cozy">
-              <div className="flex items-center space-x-3 mb-6">
-                <Shield className="h-5 w-5 text-accent" />
-                <h2 className="text-xl font-crimson font-semibold">Recent Activity</h2>
-              </div>
-              <div className="space-y-4">
-                {[
-                  { action: "User Registration", user: "ted_mosby", time: "2 minutes ago" },
-                  { action: "Profile Update", user: "barney_stinson", time: "15 minutes ago" },
-                  { action: "Admin Action", user: "robin_scherbatsky", time: "1 hour ago" },
-                  { action: "User Login", user: "lily_aldrin", time: "2 hours ago" },
-                ].map((log, index) => (
-                  <Card key={index} className="flex items-center gap-3 p-3 rounded-lg bg-card/60 dark:bg-[#23243a]/60 shadow-sm">
-                    <span className="font-medium text-accent">{log.action}</span>
-                    <span className="text-muted-foreground">by @{log.user}</span>
-                    <span className="ml-auto text-xs text-muted-foreground">{log.time}</span>
-                  </Card>
-                ))}
-              </div>
+            <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+              <CardHeader>
+                <CardTitle className="flex items-center space-x-2">
+                  <Activity className="h-5 w-5 text-blue-600" />
+                  <span>Recent Activity</span>
+                </CardTitle>
+                <CardDescription>
+                  Monitor system activity and user actions
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="space-y-4">
+                  {[
+                    { action: "User Registration", user: "john_doe", time: "2 minutes ago", type: "success" },
+                    { action: "Profile Update", user: "jane_smith", time: "15 minutes ago", type: "info" },
+                    { action: "Admin Action", user: "admin_user", time: "1 hour ago", type: "warning" },
+                    { action: "User Login", user: "mike_wilson", time: "2 hours ago", type: "info" },
+                    { action: "Account Deletion", user: "old_user", time: "3 hours ago", type: "error" },
+                  ].map((log, index) => (
+                    <div 
+                      key={index} 
+                      className="flex items-center justify-between p-4 border border-slate-200 dark:border-slate-700 rounded-lg"
+                    >
+                      <div className="flex items-center space-x-3">
+                        <div className={`w-2 h-2 rounded-full ${
+                          log.type === 'success' ? 'bg-green-500' :
+                          log.type === 'warning' ? 'bg-amber-500' :
+                          log.type === 'error' ? 'bg-red-500' : 'bg-blue-500'
+                        }`} />
+                        <div>
+                          <p className="font-medium text-slate-900 dark:text-slate-100">{log.action}</p>
+                          <p className="text-sm text-slate-600 dark:text-slate-400">by @{log.user}</p>
+                        </div>
+                      </div>
+                      <span className="text-sm text-slate-500 dark:text-slate-400">{log.time}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
             </Card>
           </TabsContent>
         </Tabs>
-      </main>
+      </div>
 
-      {/* View User Modal */}
+      {/* Modals */}
       <ViewUserModal
         user={viewUser}
         profileImages={selectedUserProfileImages}
@@ -324,7 +458,6 @@ const stats = {
         objectStorageBaseUrl={objectStorageBaseUrl}
       />
 
-      {/* Edit User Modal */}
       <EditUserModal
         selectedUser={selectedUser}
         selectedUserProfileImages={selectedUserProfileImages}
