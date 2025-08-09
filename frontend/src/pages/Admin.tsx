@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
@@ -170,7 +171,7 @@ const Admin = () => {
   };
 
   return (
-    <div className="min-h-[calc(100vh-80px)] bg-slate-50 dark:bg-slate-900">
+    <div className="min-h-[calc(100vh-80px)] bg-gradient-to-br from-slate-50 via-amber-50/30 to-slate-50 dark:from-slate-900 dark:via-amber-950/20 dark:to-slate-900">
       <div className="max-w-7xl mx-auto p-6">
         {/* Header */}
         <div className="mb-8">
@@ -184,23 +185,23 @@ const Admin = () => {
 
         {/* Stats Overview */}
         <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
-          <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+          <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-amber-200 dark:hover:border-amber-800 transition-colors">
             <CardContent className="p-6 text-center">
-              <Users className="h-8 w-8 text-blue-600 mx-auto mb-2" />
+              <Users className="h-8 w-8 text-amber-600 mx-auto mb-2" />
               <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.totalUsers}</div>
               <div className="text-sm text-slate-600 dark:text-slate-400">Total Users</div>
             </CardContent>
           </Card>
           
-          <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+          <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-emerald-200 dark:hover:border-emerald-800 transition-colors">
             <CardContent className="p-6 text-center">
-              <CheckCircle className="h-8 w-8 text-green-600 mx-auto mb-2" />
+              <CheckCircle className="h-8 w-8 text-emerald-600 mx-auto mb-2" />
               <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.activeUsers}</div>
               <div className="text-sm text-slate-600 dark:text-slate-400">Active Users</div>
             </CardContent>
           </Card>
           
-          <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+          <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-amber-200 dark:hover:border-amber-800 transition-colors">
             <CardContent className="p-6 text-center">
               <Crown className="h-8 w-8 text-amber-600 mx-auto mb-2" />
               <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.adminUsers}</div>
@@ -208,9 +209,9 @@ const Admin = () => {
             </CardContent>
           </Card>
           
-          <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
+          <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-rose-200 dark:hover:border-rose-800 transition-colors">
             <CardContent className="p-6 text-center">
-              <XCircle className="h-8 w-8 text-orange-600 mx-auto mb-2" />
+              <XCircle className="h-8 w-8 text-rose-600 mx-auto mb-2" />
               <div className="text-2xl font-bold text-slate-900 dark:text-slate-100">{stats.pendingUsers}</div>
               <div className="text-sm text-slate-600 dark:text-slate-400">Pending</div>
             </CardContent>
@@ -219,15 +220,15 @@ const Admin = () => {
 
         <Tabs value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="grid w-full grid-cols-3 mb-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-            <TabsTrigger value="users" className="flex items-center space-x-2">
+            <TabsTrigger value="users" className="flex items-center space-x-2 data-[state=active]:bg-amber-100 data-[state=active]:text-amber-900 dark:data-[state=active]:bg-amber-900/30 dark:data-[state=active]:text-amber-400">
               <Users className="h-4 w-4" />
               <span>Users</span>
             </TabsTrigger>
-            <TabsTrigger value="settings" className="flex items-center space-x-2">
+            <TabsTrigger value="settings" className="flex items-center space-x-2 data-[state=active]:bg-amber-100 data-[state=active]:text-amber-900 dark:data-[state=active]:bg-amber-900/30 dark:data-[state=active]:text-amber-400">
               <Database className="h-4 w-4" />
               <span>System</span>
             </TabsTrigger>
-            <TabsTrigger value="logs" className="flex items-center space-x-2">
+            <TabsTrigger value="logs" className="flex items-center space-x-2 data-[state=active]:bg-amber-100 data-[state=active]:text-amber-900 dark:data-[state=active]:bg-amber-900/30 dark:data-[state=active]:text-amber-400">
               <Activity className="h-4 w-4" />
               <span>Activity</span>
             </TabsTrigger>
@@ -313,24 +314,26 @@ const Admin = () => {
                         </div>
                         
                         <div className="flex items-center space-x-2">
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
+                          <Button
+                            size="sm"
+                            variant="outline"
                             onClick={() => handleViewUserOpen(user)}
+                            className="hover:bg-amber-50 hover:text-amber-700 dark:hover:bg-amber-900/20 dark:hover:text-amber-400"
                           >
                             <Eye className="h-4 w-4" />
                           </Button>
-                          <Button 
-                            size="sm" 
-                            variant="outline" 
+                          <Button
+                            size="sm"
+                            variant="outline"
                             onClick={() => handleEditUserOpen(user)}
+                            className="hover:bg-amber-50 hover:text-amber-700 dark:hover:bg-amber-900/20 dark:hover:text-amber-400"
                           >
                             <Edit3 className="h-4 w-4" />
                           </Button>
                           {user.id !== currentUserId && (
-                            <Button 
-                              size="sm" 
-                              variant="destructive" 
+                            <Button
+                              size="sm"
+                              variant="destructive"
                               onClick={() => handleDeleteUser(user.id)}
                             >
                               <Trash2 className="h-4 w-4" />

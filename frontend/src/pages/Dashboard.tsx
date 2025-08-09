@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Badge } from "@/components/ui/badge";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { 
   MessageCircle, 
   Users, 
@@ -19,18 +19,21 @@ import {
 import { useNavigate } from "react-router-dom";
 import { userService } from "../services/user";
 import { conversationService } from "../services/conversation";
+import { NewConversationDialog } from "@/components/NewConversationDialog";
 import { messageService } from "../services/message";
 import { useToast } from "@/components/ui/use-toast";
 import { authUtils } from "@/lib/authUtils";
 import { getObjectStorageBaseUrl } from "@/lib/env";
-import { ConversationResponseDto } from "@/types/conversation";
-import { Message } from "@/types/message";
-import { UserResponseDto } from "@/types/user";
+import { ConversationResponseDto } from "../types/conversation.types";
+import { Message } from "../types/message.types";
+import { UserResponseDto } from "../types/user.types";
 import { encryptMessage, decryptMessage } from "@/lib/cryptoUtils";
 import { keyStorage } from "@/lib/keyStorage";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
 import { EncryptionSetupBanner } from "@/components/EncryptionSetupBanner";
+import { ConversationTabs } from "@/components/ConversationTabs";
+import { UserProfileModal } from "@/components/modals/UserProfileModal";
 
 const Dashboard = () => {
   const objectStorageBaseUrl = getObjectStorageBaseUrl();
@@ -42,14 +45,24 @@ const Dashboard = () => {
   const [chats, setChats] = useState<ConversationResponseDto[]>([]);
   const [messages, setMessages] = useState<Message[]>([]);
   const [userNamesMap, setUserNamesMap] = useState<Record<string, string>>({});
+  const [usersDataMap, setUsersDataMap] = useState<Record<string, UserResponseDto>>({});
   const [isEncrypted, setIsEncrypted] = useState(false);
   const [showNewMessage, setShowNewMessage] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [searchResults, setSearchResults] = useState<UserResponseDto[]>([]);
-  const [isSearching, setIsSearching] = useState(false);
+  const [selectedUserProfile, setSelectedUserProfile] = useState<UserResponseDto | null>(null);
+  const [showUserProfile, setShowUserProfile] = useState(false);
 
   const addMessage = (newMessage: Message) => {
     setMessages(prev => [...prev, newMessage]);
+  };
+
+  const handleUserClick = (user: UserResponseDto) => {
+    setSelectedUserProfile(user);
+    setShowUserProfile(true);
+  };
+
+  const handleUserProfileClose = () => {
+    setShowUserProfile(false);
+    setSelectedUserProfile(null);
   };
 
   useEffect(() => {
@@ -74,14 +87,18 @@ const Dashboard = () => {
         setChats(userConversations);
 
         const newUserNamesMap: Record<string, string> = {};
+        const newUsersDataMap: Record<string, UserResponseDto> = {};
+        
         for (const conversation of userConversations) {
-          const otherUserId = conversation.participant_ids.find(id => id !== user.id);
+          const otherUserId = conversation.participant_ids?.find(id => id !== user.id);
           if (otherUserId && !newUserNamesMap[otherUserId]) {
             const userInfo = await userService.getUserById(otherUserId);
             newUserNamesMap[otherUserId] = userInfo.username;
+            newUsersDataMap[otherUserId] = userInfo;
           }
         }
         setUserNamesMap(newUserNamesMap);
+        setUsersDataMap(newUsersDataMap);
 
       } catch (error) {
         toast({
@@ -141,60 +158,33 @@ const Dashboard = () => {
     });
   };
 
-  const handleSearch = async (query: string) => {
-    if (!query.trim()) {
-      setSearchResults([]);
-      return;
+  const handleConversationCreated = (conversation: ConversationResponseDto, newUserNamesMap: Record<string, string>) => {
+    // Add to chats if not already there
+    const existingChat = chats.find(chat => chat.id === conversation.id);
+    if (!existingChat) {
+      setChats(prev => [conversation, ...prev]);
+      setUserNamesMap(prev => ({ ...prev, ...newUserNamesMap }));
+      
+      // Also fetch full user data for new conversation participants
+      const fetchNewUsersData = async () => {
+        const newUsersDataMap: Record<string, UserResponseDto> = {};
+        for (const userId of conversation.participant_ids || []) {
+          if (userId !== currentUser?.id && !usersDataMap[userId]) {
+            try {
+              const userInfo = await userService.getUserById(userId);
+              newUsersDataMap[userId] = userInfo;
+            } catch (error) {
+              console.error(`Failed to fetch user data for user ${userId}:`, error);
+            }
+          }
+        }
+        setUsersDataMap(prev => ({ ...prev, ...newUsersDataMap }));
+      };
+      
+      fetchNewUsersData();
     }
-
-    setIsSearching(true);
-    try {
-      const result = await userService.searchUsers(query);
-      setSearchResults([result]);
-    } catch (error) {
-      if (error.response?.status === 404) {
-        setSearchResults([]);
-      } else {
-        toast({
-          title: "Search failed",
-          description: "Unable to search users at this time.",
-          variant: "destructive",
-        });
-      }
-    } finally {
-      setIsSearching(false);
-    }
-  };
-
-  const handleStartConversation = async (user: UserResponseDto) => {
-    if (!currentUser) return;
     
-    try {
-      const conversation = await conversationService.createConversation([currentUser.id, user.id]);
-      
-      // Add to chats if not already there
-      const existingChat = chats.find(chat => chat.id === conversation.id);
-      if (!existingChat) {
-        setChats(prev => [conversation, ...prev]);
-        setUserNamesMap(prev => ({ ...prev, [user.id]: user.username }));
-      }
-      
-      setSelectedChat(conversation);
-      setShowNewMessage(false);
-      setSearchQuery("");
-      setSearchResults([]);
-      
-      toast({
-        title: "Conversation started",
-        description: `You can now chat with @${user.username}`,
-      });
-    } catch (error) {
-      toast({
-        title: "Failed to start conversation",
-        description: error.response?.data?.detail || "An unexpected error occurred.",
-        variant: "destructive",
-      });
-    }
+    setSelectedChat(conversation);
   };
 
   const handleSendMessage = async (e: React.FormEvent) => {
@@ -206,7 +196,7 @@ const Dashboard = () => {
       let encryptedStatus = isEncrypted;
 
       if (isEncrypted) {
-        const otherUserId = selectedChat.participant_ids.find(id => id !== currentUser.id);
+        const otherUserId = selectedChat.participant_ids?.find(id => id !== currentUser?.id);
         if (!otherUserId) {
           toast({
             title: "Error",
@@ -232,7 +222,7 @@ const Dashboard = () => {
 
       const newMessage = await messageService.sendMessage(
         currentUser.id,
-        selectedChat.participant_ids.find(id => id !== currentUser.id),
+        selectedChat.participant_ids?.find(id => id !== currentUser?.id),
         selectedChat.id,
         contentToSend,
         encryptedStatus
@@ -275,75 +265,14 @@ const Dashboard = () => {
               <div className="p-4 border-b border-slate-200 dark:border-slate-700">
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="font-semibold text-lg text-slate-900 dark:text-slate-100">Messages</h2>
-                  <Dialog open={showNewMessage} onOpenChange={setShowNewMessage}>
-                    <DialogTrigger asChild>
-                      <Button size="sm" className="bg-blue-600 hover:bg-blue-700 text-white">
-                        <Plus className="h-4 w-4 mr-1" />
-                        New
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent className="sm:max-w-md">
-                      <DialogHeader>
-                        <DialogTitle>Start a new conversation</DialogTitle>
-                      </DialogHeader>
-                      <div className="space-y-4">
-                        <div className="relative">
-                          <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-slate-400" />
-                          <Input
-                            placeholder="Search users by username..."
-                            value={searchQuery}
-                            onChange={(e) => {
-                              setSearchQuery(e.target.value);
-                              handleSearch(e.target.value);
-                            }}
-                            className="pl-10"
-                          />
-                        </div>
-                        
-                        {isSearching && (
-                          <div className="text-center py-4">
-                            <div className="animate-spin rounded-full h-6 w-6 border-b-2 border-blue-600 mx-auto"></div>
-                          </div>
-                        )}
-                        
-                        {searchResults.length > 0 && (
-                          <div className="space-y-2">
-                            {searchResults.map((user) => (
-                              <div
-                                key={user.id}
-                                className="flex items-center justify-between p-3 rounded-lg border border-slate-200 dark:border-slate-700 hover:bg-slate-50 dark:hover:bg-slate-700"
-                              >
-                                <div className="flex items-center space-x-3">
-                                  <Avatar className="h-8 w-8">
-                                    <AvatarImage src={user.active_avatar_url ? `${objectStorageBaseUrl}/${user.active_avatar_url}` : '/default-avatar.svg'} />
-                                    <AvatarFallback>{user.username.slice(0, 2).toUpperCase()}</AvatarFallback>
-                                  </Avatar>
-                                  <div>
-                                    <p className="font-medium text-slate-900 dark:text-slate-100">@{user.username}</p>
-                                    <p className="text-sm text-slate-500 dark:text-slate-400">{user.email}</p>
-                                  </div>
-                                </div>
-                                <Button
-                                  size="sm"
-                                  onClick={() => handleStartConversation(user)}
-                                  className="bg-blue-600 hover:bg-blue-700 text-white"
-                                >
-                                  <MessageCircle className="h-4 w-4 mr-1" />
-                                  Message
-                                </Button>
-                              </div>
-                            ))}
-                          </div>
-                        )}
-                        
-                        {searchQuery && !isSearching && searchResults.length === 0 && (
-                          <div className="text-center py-4 text-slate-500 dark:text-slate-400">
-                            No users found with username "{searchQuery}"
-                          </div>
-                        )}
-                      </div>
-                    </DialogContent>
-                  </Dialog>
+                  <Button 
+                    size="sm" 
+                    className="bg-blue-600 hover:bg-blue-700 text-white"
+                    onClick={() => setShowNewMessage(true)}
+                  >
+                    <Plus className="h-4 w-4 mr-1" />
+                    New
+                  </Button>
                 </div>
                 
                 <div className="relative">
@@ -353,51 +282,15 @@ const Dashboard = () => {
               </div>
               
               <div className="flex-1 overflow-y-auto">
-                {chats.length === 0 ? (
-                  <div className="p-4 text-center text-slate-500 dark:text-slate-400">
-                    <MessageCircle className="h-8 w-8 mx-auto mb-2 opacity-50" />
-                    <p className="text-sm">No conversations yet</p>
-                    <p className="text-xs">Start a new conversation to get chatting!</p>
-                  </div>
-                ) : (
-                  <div className="p-2">
-                    {chats.map((chat) => {
-                      const isSelected = selectedChat?.id === chat.id;
-                      const otherUserId = chat.participant_ids.find(id => id !== currentUser.id);
-                      const chatName = otherUserId ? userNamesMap[otherUserId] || "Loading..." : "Unknown User";
-                      
-                      return (
-                        <div
-                          key={chat.id}
-                          onClick={() => setSelectedChat(chat)}
-                          className={`flex items-center space-x-3 p-3 rounded-lg cursor-pointer transition-colors mb-1 ${
-                            isSelected
-                              ? 'bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800'
-                              : 'hover:bg-slate-50 dark:hover:bg-slate-700'
-                          }`}
-                        >
-                          <Avatar className="h-10 w-10">
-                            <AvatarImage src="/default-avatar.svg" />
-                            <AvatarFallback className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
-                              {chatName.slice(0, 2).toUpperCase()}
-                            </AvatarFallback>
-                          </Avatar>
-                          <div className="flex-1 min-w-0">
-                            <div className="flex items-center justify-between">
-                              <p className="font-medium text-slate-900 dark:text-slate-100 truncate">{chatName}</p>
-                              <span className="text-xs text-slate-500 dark:text-slate-400">
-                                {new Date(chat.created_at).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                              </span>
-                            </div>
-                            <p className="text-sm text-slate-500 dark:text-slate-400 truncate">
-                              No messages yet
-                            </p>
-                          </div>
-                        </div>
-                      );
-                    })}
-                  </div>
-                )}
+                <ConversationTabs
+                  chats={chats}
+                  selectedChat={selectedChat}
+                  currentUserId={currentUser?.id || ''}
+                  userNamesMap={userNamesMap}
+                  usersDataMap={usersDataMap}
+                  onChatSelect={setSelectedChat}
+                  onUserClick={handleUserClick}
+                />
               </div>
             </Card>
           </div>
@@ -409,18 +302,45 @@ const Dashboard = () => {
                 {/* Chat Header */}
                 <div className="flex items-center justify-between p-4 border-b border-slate-200 dark:border-slate-700">
                   <div className="flex items-center space-x-3">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src="/default-avatar.svg" />
+                    <Avatar 
+                      className="h-10 w-10 cursor-pointer hover:ring-2 hover:ring-blue-300 transition-all"
+                      onClick={() => {
+                        const otherUserId = selectedChat.participant_ids?.find(id => id !== currentUser?.id);
+                        const otherUser = otherUserId ? usersDataMap[otherUserId] : null;
+                        if (otherUser) {
+                          handleUserClick(otherUser);
+                        }
+                      }}
+                    >
+                      <AvatarImage 
+                        src={(() => {
+                          const otherUserId = selectedChat.participant_ids?.find(id => id !== currentUser?.id);
+                          const otherUser = otherUserId ? usersDataMap[otherUserId] : null;
+                          return otherUser?.active_avatar_url 
+                            ? `${objectStorageBaseUrl}/${otherUser.active_avatar_url}` 
+                            : "/default-avatar.svg";
+                        })()} 
+                        alt="User avatar"
+                      />
                       <AvatarFallback className="bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">
-                        {selectedChat.participant_ids.find(id => id !== currentUser.id) ? 
-                          userNamesMap[selectedChat.participant_ids.find(id => id !== currentUser.id)!]?.slice(0, 2).toUpperCase() : 
+                        {selectedChat.participant_ids?.find(id => id !== currentUser?.id) ? 
+                          userNamesMap[selectedChat.participant_ids.find(id => id !== currentUser?.id)!]?.slice(0, 2).toUpperCase() : 
                           "UN"}
                       </AvatarFallback>
                     </Avatar>
                     <div>
-                      <h3 className="font-semibold text-slate-900 dark:text-slate-100">
-                        {selectedChat.participant_ids.find(id => id !== currentUser.id) ? 
-                          userNamesMap[selectedChat.participant_ids.find(id => id !== currentUser.id)!] : 
+                      <h3 
+                        className="font-semibold text-slate-900 dark:text-slate-100 cursor-pointer hover:text-blue-600 transition-colors"
+                        onClick={() => {
+                          const otherUserId = selectedChat.participant_ids?.find(id => id !== currentUser?.id);
+                          const otherUser = otherUserId ? usersDataMap[otherUserId] : null;
+                          if (otherUser) {
+                            handleUserClick(otherUser);
+                          }
+                        }}
+                      >
+                        {selectedChat.participant_ids?.find(id => id !== currentUser?.id) ? 
+                          userNamesMap[selectedChat.participant_ids.find(id => id !== currentUser?.id)!] : 
                           "Unknown User"}
                       </h3>
                       <div className="flex items-center space-x-1">
@@ -454,11 +374,11 @@ const Dashboard = () => {
                     messages.map((msg) => (
                       <div
                         key={msg.id}
-                        className={`flex ${msg.sender_id === currentUser.id ? 'justify-end' : 'justify-start'}`}
+                        className={`flex ${msg.sender_id === currentUser?.id ? 'justify-end' : 'justify-start'}`}
                       >
                         <div
                           className={`max-w-[70%] rounded-2xl px-4 py-2 ${
-                            msg.sender_id === currentUser.id
+                            msg.sender_id === currentUser?.id
                               ? 'bg-blue-600 text-white rounded-br-md'
                               : 'bg-slate-100 dark:bg-slate-700 text-slate-900 dark:text-slate-100 rounded-bl-md'
                           }`}
@@ -466,13 +386,13 @@ const Dashboard = () => {
                           <p className="break-words">{msg.content}</p>
                           <div className="flex items-center justify-between mt-1">
                             <span className={`text-xs ${
-                              msg.sender_id === currentUser.id 
+                              msg.sender_id === currentUser?.id 
                                 ? 'text-blue-100' 
                                 : 'text-slate-500 dark:text-slate-400'
                             }`}>
                               {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
                             </span>
-                            {msg.sender_id === currentUser.id && (
+                            {msg.sender_id === currentUser?.id && (
                               <CheckCircle2 className="h-3 w-3 text-blue-200" />
                             )}
                           </div>
@@ -537,6 +457,23 @@ const Dashboard = () => {
             )}
           </div>
         </div>
+        
+        {/* New Conversation Dialog */}
+        {currentUser && (
+          <NewConversationDialog
+            open={showNewMessage}
+            onOpenChange={setShowNewMessage}
+            currentUser={currentUser}
+            onConversationCreated={handleConversationCreated}
+          />
+        )}
+
+        {/* User Profile Modal */}
+        <UserProfileModal
+          user={selectedUserProfile}
+          isOpen={showUserProfile}
+          onClose={handleUserProfileClose}
+        />
       </div>
     </div>
   );

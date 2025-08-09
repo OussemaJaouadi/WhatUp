@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, File, HTTPException, status, Request, Form, Depends
+from fastapi import APIRouter, UploadFile, File, HTTPException, status, Request, Form, Depends, Query
 from typing import Optional
 from uuid import UUID
 from pydantic import EmailStr
@@ -29,7 +29,7 @@ class UserRoutes:
         self.router.add_api_route("/admin/delete/{user_id}", self.admin_delete_user, methods=["DELETE"], response_model=dict)
         self.router.add_api_route("/me", self.get_me, methods=["GET"], response_model=UserResponseDto)
         self.router.add_api_route("/all", self.get_all_users, methods=["GET"], response_model=list[UserResponseAdminListDto])
-        self.router.add_api_route("/{user_id}", self.get_user_by_id, methods=["GET"], response_model=UserResponseDto)
+        self.router.add_api_route("/search", self.get_user_by_username, methods=["GET"], response_model=UserResponseDto)
         self.router.add_api_route("/admin/edit", self.admin_edit_user, methods=["PUT"], response_model=UserResponseAdminDto)
         self.router.add_api_route("/me/bio", self.update_my_bio, methods=["PUT"], response_model=UserResponseDto)
         self.router.add_api_route("/request-password-reset", self.request_password_reset, methods=["POST"])
@@ -37,10 +37,10 @@ class UserRoutes:
         self.router.add_api_route("/confirm-account", self.confirm_account, methods=["GET"])
         self.router.add_api_route("/public-key", self.update_public_key, methods=["PUT"], response_model=dict)
         self.router.add_api_route("/public-key/{user_id}", self.get_public_key, methods=["GET"], response_model=dict)
-        self.router.add_api_route("/search", self.get_user_by_username, methods=["GET"], response_model=UserResponseDto)
         self.router.add_api_route("/private-key-backup", self.upload_private_key_backup, methods=["PUT"], response_model=dict)
         self.router.add_api_route("/private-key-backup", self.get_private_key_backup, methods=["POST"], response_model=dict)
         self.router.add_api_route("/crypto-setup-status", self.get_crypto_setup_status, methods=["GET"], response_model=dict)
+        self.router.add_api_route("/{user_id}", self.get_user_by_id, methods=["GET"], response_model=UserResponseDto)
 
     @requires_no_auth
     async def register(self, request: Request, username: str = Form(...), email: EmailStr = Form(...), password: str = Form(...), file: Optional[UploadFile] = File(None)):
@@ -185,14 +185,6 @@ class UserRoutes:
         users = await self.user_service.get_all_users()
         return [UserResponseAdminListDto.model_validate(u.__dict__) for u in users]
 
-    @requires_auth
-    async def get_user_by_id(self, request: Request, user_id: UUID) -> UserResponseDto:
-        try:
-            user = await self.user_service.get_user_by_id(str(user_id))
-            return UserResponseDto.model_validate(user.__dict__)
-        except ValueError as e:
-            raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
-
     @requires_admin
     async def admin_edit_user(self, request: Request, user_id: str, role: Optional[UserRole] = Form(None), account_confirmed: Optional[bool] = Form(None), bio: Optional[str] = Form(None), file: UploadFile = File(None)) -> UserResponseAdminDto:
         # Handle empty string for optional form fields
@@ -257,21 +249,20 @@ class UserRoutes:
     @requires_auth
     async def get_public_key(self, request: Request, user_id: str) -> dict:
         try:
-            public_key = await self.user_service.get_public_key(user_id)
-            if not public_key:
-                # User exists but hasn't set up a public key yet
-                return {"public_key": None, "message": "User has not set up a public key yet"}
+            public_key = await self.user_service.get_public_key_for_encryption(user_id)
             return {"public_key": public_key}
         except ValueError as e:
             if "User not found" in str(e):
                 raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
+            if "does not have a public key" in str(e):
+                return {"public_key": None, "message": "User has not set up a public key yet"}
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
     @requires_auth
-    async def get_user_by_username(self, request: Request, username: str) -> UserResponseDto:
+    async def get_user_by_username(self, request: Request, username: str = Query(...)) -> list[UserResponseDto]:
         try:
-            user = await self.user_service.get_user_by_username(username)
-            return UserResponseDto.model_validate(user.__dict__)
+            users = await self.user_service.get_user_by_username(username)
+            return [UserResponseDto.model_validate(u.__dict__) for u in users]
         except ValueError as e:
             raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail=str(e))
     

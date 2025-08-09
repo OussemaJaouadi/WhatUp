@@ -134,33 +134,34 @@ async def get_current_user(request: Request) -> TokenPayload:
     if not token:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Not authenticated: Missing token",
-            headers={"Authorization": "Bearer"},
+            detail="Not authenticated: Missing Authorization header",
+            headers={"WWW-Authenticate": "Bearer"},
         )
     try:
         scheme, credentials = token.split(" ")
         if scheme.lower() != "bearer":
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Invalid authentication scheme",
-                headers={"Authorization": "Bearer"},
+                detail="Invalid authentication scheme. Use 'Bearer <token>'",
+                headers={"WWW-Authenticate": "Bearer"},
             )
         payload = await verify_token(credentials)
         if not payload:
             raise HTTPException(
                 status_code=status.HTTP_401_UNAUTHORIZED,
-                detail="Could not validate credentials",
-                headers={"Authorization": "Bearer"},
+                detail="Invalid or expired token",
+                headers={"WWW-Authenticate": "Bearer"},
             )
         return payload
     except ValueError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Invalid token format",
-            headers={"Authorization": "Bearer"},
+            detail="Invalid Authorization header format. Use 'Bearer <token>'",
+            headers={"WWW-Authenticate": "Bearer"},
         )
-    except JWTError:
+    except JWTError as e:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
-            detail="Could not validate credentials",
+            detail=f"Token validation failed: {str(e)}",
+            headers={"WWW-Authenticate": "Bearer"},
         )

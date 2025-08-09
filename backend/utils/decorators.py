@@ -32,6 +32,8 @@ def requires_auth(func):
     @wraps(func)
     async def wrapper(*args, **kwargs):
         request: Request = kwargs.get('request')
+        # Extract request from kwargs or args
+        request: Request = kwargs.get('request')
         if not request:
             for arg in args:
                 if isinstance(arg, Request):
@@ -40,9 +42,13 @@ def requires_auth(func):
         if not request:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail="Request object not found")
         
-        current_user: TokenPayload = await get_current_user(request)
-        request.state.user = current_user # Attach user info to request state
-        return await func(*args, **kwargs)
+        try:
+            current_user: TokenPayload = await get_current_user(request)
+            request.state.user = current_user # Attach user info to request state
+            return await func(*args, **kwargs)
+        except HTTPException as e:
+            # Re-raise authentication errors with proper status codes
+            raise e
     return wrapper
 
 # Decorator for endpoints that require no authentication (e.g., login/register)

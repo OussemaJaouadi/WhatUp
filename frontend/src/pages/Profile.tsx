@@ -240,7 +240,7 @@ const Profile = () => {
   const activeProfileImage = profileImages.find(img => img.is_active);
 
   return (
-    <div className="min-h-[calc(100vh-80px)] bg-slate-50 dark:bg-slate-900">
+    <div className="min-h-[calc(100vh-80px)] bg-gradient-to-br from-slate-50 via-amber-50/30 to-slate-50 dark:from-slate-900 dark:via-amber-900/10 dark:to-slate-900">
       <div className="max-w-6xl mx-auto p-6">
         <div className="grid lg:grid-cols-4 gap-6">
           {/* Profile Summary */}
@@ -248,13 +248,13 @@ const Profile = () => {
             <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
               <CardContent className="p-6 text-center">
                 <div className="relative mx-auto w-24 h-24 mb-4">
-                  <img 
-                    src={activeProfileImage ? `${objectStorageBaseUrl}/${activeProfileImage.image_key}` : "/default-avatar.svg"} 
-                    alt={currentUser.username} 
+                  <img
+                    src={activeProfileImage ? `${objectStorageBaseUrl}/${activeProfileImage.image_key}` : "/default-avatar.svg"}
+                    alt={currentUser.username}
                     className="w-24 h-24 rounded-full object-cover border-2 border-slate-200 dark:border-slate-600"
                   />
                   {activeProfileImage && (
-                    <div className="absolute -bottom-1 -right-1 bg-blue-600 p-1.5 rounded-full border-2 border-white dark:border-slate-800">
+                    <div className="absolute -bottom-1 -right-1 bg-amber-500 p-1.5 rounded-full border-2 border-white dark:border-slate-800">
                       <Star className="h-3 w-3 text-white fill-current" />
                     </div>
                   )}
@@ -284,19 +284,19 @@ const Profile = () => {
           <div className="lg:col-span-3">
             <Tabs value={activeTab} onValueChange={setActiveTab}>
               <TabsList className="grid w-full grid-cols-4 mb-6 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700">
-                <TabsTrigger value="profile" className="flex items-center space-x-2">
+                <TabsTrigger value="profile" className="flex items-center space-x-2 data-[state=active]:bg-amber-50 data-[state=active]:text-amber-700 dark:data-[state=active]:bg-amber-900/20 dark:data-[state=active]:text-amber-400 hover:bg-amber-50/50 dark:hover:bg-amber-900/10">
                   <UserIcon className="h-4 w-4" />
                   <span className="hidden sm:inline">Profile</span>
                 </TabsTrigger>
-                <TabsTrigger value="images" className="flex items-center space-x-2">
+                <TabsTrigger value="images" className="flex items-center space-x-2 data-[state=active]:bg-amber-50 data-[state=active]:text-amber-700 dark:data-[state=active]:bg-amber-900/20 dark:data-[state=active]:text-amber-400 hover:bg-amber-50/50 dark:hover:bg-amber-900/10">
                   <Camera className="h-4 w-4" />
                   <span className="hidden sm:inline">Photos</span>
                 </TabsTrigger>
-                <TabsTrigger value="security" className="flex items-center space-x-2">
+                <TabsTrigger value="security" className="flex items-center space-x-2 data-[state=active]:bg-amber-50 data-[state=active]:text-amber-700 dark:data-[state=active]:bg-amber-900/20 dark:data-[state=active]:text-amber-400 hover:bg-amber-50/50 dark:hover:bg-amber-900/10">
                   <Shield className="h-4 w-4" />
                   <span className="hidden sm:inline">Security</span>
                 </TabsTrigger>
-                <TabsTrigger value="settings" className="flex items-center space-x-2">
+                <TabsTrigger value="settings" className="flex items-center space-x-2 data-[state=active]:bg-amber-50 data-[state=active]:text-amber-700 dark:data-[state=active]:bg-amber-900/20 dark:data-[state=active]:text-amber-400 hover:bg-amber-50/50 dark:hover:bg-amber-900/10">
                   <Settings className="h-4 w-4" />
                   <span className="hidden sm:inline">Settings</span>
                 </TabsTrigger>
@@ -307,7 +307,7 @@ const Profile = () => {
                 <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
                   <CardHeader>
                     <CardTitle className="flex items-center space-x-2">
-                      <UserIcon className="h-5 w-5 text-blue-600" />
+                      <UserIcon className="h-5 w-5 text-amber-600" />
                       <span>Profile Information</span>
                     </CardTitle>
                     <CardDescription>
@@ -348,7 +348,7 @@ const Profile = () => {
                           className="resize-none"
                         />
                       </div>
-                      <Button type="submit" className="bg-blue-600 hover:bg-blue-700 text-white">
+                      <Button type="submit" className="bg-amber-600 hover:bg-amber-700 text-white">
                         <Edit3 className="h-4 w-4 mr-2" />
                         Update Bio
                       </Button>
@@ -363,7 +363,7 @@ const Profile = () => {
                   <CardHeader>
                     <CardTitle className="flex items-center justify-between">
                       <div className="flex items-center space-x-2">
-                        <Camera className="h-5 w-5 text-blue-600" />
+                        <Camera className="h-5 w-5 text-amber-600" />
                         <span>Profile Photos</span>
                       </div>
                       <Badge variant="outline" className="text-slate-600 dark:text-slate-400">
@@ -395,7 +395,7 @@ const Profile = () => {
                           className="hidden"
                         />
                         {newProfileImageFile && (
-                          <Button onClick={handleUploadImage} className="bg-blue-600 hover:bg-blue-700 text-white">
+                          <Button onClick={handleUploadImage} className="bg-amber-600 hover:bg-amber-700 text-white">
                             <Upload className="h-4 w-4 mr-2" />
                             Upload
                           </Button>
@@ -418,7 +418,7 @@ const Profile = () => {
 
                             {image.is_active && (
                               <div className="absolute top-2 left-2">
-                                <Badge className="bg-blue-600 text-white">
+                                <Badge className="bg-amber-600 text-white">
                                   <Star className="h-3 w-3 mr-1 fill-current" />
                                   Active
                                 </Badge>
@@ -496,7 +496,7 @@ const Profile = () => {
                 <Card className="bg-white dark:bg-slate-800 border-slate-200 dark:border-slate-700">
                   <CardHeader>
                     <CardTitle className="flex items-center space-x-2">
-                      <Key className="h-5 w-5 text-blue-600" />
+                      <Key className="h-5 w-5 text-amber-600" />
                       <span>Encryption Keys</span>
                     </CardTitle>
                     <CardDescription>
@@ -513,10 +513,10 @@ const Profile = () => {
                         <p className="text-sm text-slate-600 dark:text-slate-400 mb-4">
                           Generate encryption keys to enable secure messaging
                         </p>
-                        <Button 
-                          onClick={handleGenerateAndUploadKeys} 
+                        <Button
+                          onClick={handleGenerateAndUploadKeys}
                           disabled={isGeneratingKeys}
-                          className="bg-blue-600 hover:bg-blue-700 text-white"
+                          className="bg-amber-600 hover:bg-amber-700 text-white"
                         >
                           {isGeneratingKeys ? (
                             <>

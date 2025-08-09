@@ -92,9 +92,7 @@ email_templates_path = os.path.join(os.path.dirname(__file__), 'templates', 'ema
 email_handler = EmailHandler(email_templates_path)
 encryption_util = EncryptionUtil()
 
-async def get_db():
-    async with AsyncSessionLocal() as session:
-        yield session
+
 
 
 
@@ -107,7 +105,7 @@ user_service = UserService(
 )
 
 conversation_service = ConversationService(db_session_factory=AsyncSessionLocal)
-message_service = MessageService(db_session=AsyncSessionLocal, conversation_service=conversation_service, user_service=user_service, encryption_util=encryption_util)
+message_service = MessageService(db_session_factory=AsyncSessionLocal, conversation_service=conversation_service, user_service=user_service, encryption_util=encryption_util)
 
 
 # Define connection manager and socket event handler

@@ -1,9 +1,8 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, HTTPException, status, Request
 from typing import List
 from uuid import UUID
 
-from core.database import AsyncSessionLocal
+
 from services.message_service import MessageService
 from dto.message import MessageCreate, Message
 from models.user import User
@@ -32,20 +31,19 @@ class MessageRoutes:
     async def mark_message_read(
         self,
         message_id: UUID,
-        request: Request,
-        db: AsyncSession = Depends(AsyncSessionLocal)
+        request: Request
     ) -> dict:
         current_user = request.state.user
         await self.message_service.mark_message_read(message_id, current_user.sub)
         return {"detail": "Message marked as read."}
 
+    
     @requires_auth
     async def delete_message(
         self,
         message_id: UUID,
         request: Request,
-        for_all: bool = False,
-        db: AsyncSession = Depends(AsyncSessionLocal)
+        for_all: bool = False
     ) -> dict:
         current_user = request.state.user
         try:
@@ -58,16 +56,11 @@ class MessageRoutes:
         except ValueError as e:
             raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(e))
 
-    async def get_db(self):
-        async with AsyncSessionLocal() as session:
-            yield session
-
     @requires_auth
     async def send_message(
         self,
         message_create: MessageCreate,
-        request: Request,
-        db: AsyncSession = Depends(AsyncSessionLocal)
+        request: Request
     ) -> Message:
         current_user = request.state.user
         if message_create.sender_id != current_user.sub:
@@ -90,8 +83,7 @@ class MessageRoutes:
     async def get_messages_for_conversation(
         self,
         conversation_id: UUID,
-        request: Request,
-        db: AsyncSession = Depends(AsyncSessionLocal)
+        request: Request
     ) -> List[Message]:
         # TODO: Add logic to ensure current_user is part of the conversation
         return await self.message_service.get_messages_for_conversation(conversation_id)
@@ -100,8 +92,7 @@ class MessageRoutes:
     async def get_messages_for_group(
         self,
         group_id: UUID,
-        request: Request,
-        db: AsyncSession = Depends(AsyncSessionLocal)
+        request: Request
     ) -> List[Message]:
         # TODO: Add logic to ensure current_user is part of the group
         return await self.message_service.get_messages_for_group(group_id)

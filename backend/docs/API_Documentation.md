@@ -1,435 +1,891 @@
-# API Documentation
+# WhatUp API Documentation
 
-This document outlines the API endpoints for the WhatUp Backend application.
+## Overview
+This document provides comprehensive documentation for the WhatUp application API endpoints, focusing on user management, authentication, profile functionality, messaging, and administrative features.
+
+## Base URL
+```
+http://localhost:8000
+```
 
 ## Authentication
+The API uses JWT (JSON Web Tokens) for authentication. Include the token in the Authorization header:
+```
+Authorization: Bearer <your_jwt_token>
+```
 
-All authenticated endpoints require a JWT Bearer token in the `Authorization` header.
+### Authentication Decorators
+- `@requires_auth`: Requires valid JWT token
+- `@requires_admin`: Requires admin role
+- `@requires_no_auth`: No authentication required
 
-**Scheme:** `Bearer <YOUR_JWT_TOKEN>`
+## Data Models
 
-## Endpoints
+### User Models
 
-### User Management
-
-#### `POST /user/register`
-
-Registers a new user.
-
-- **Authentication:** None
-- **Request Body (multipart/form-data):**
-  - `username`: string
-  - `email`: string (email format)
-  - `password`: string
-  - `file`: Optional[UploadFile] - User's profile picture. If provided, it will be uploaded and set as the active profile picture.
-- **Responses:**
-  - `200 OK`: `UserResponseDto` - User registered successfully.
-  - `400 Bad Request`: Invalid input (e.g., username/email already exists, invalid file).
-
-#### `POST /user/login`
-
-Logs in a user and returns an access token.
-
-- **Request Body:**
-  ```json
-  {
-    "username": "string" (can be username or email),
-    "password": "string"
-  }
-  ```
-- **Responses:**
-  - `200 OK`: `TokenData` - User logged in successfully.
-  - `401 Unauthorized`: Invalid credentials.
-
-#### `POST /user/profile-images`
-Uploads a new profile image for the authenticated user. Up to 5 images are allowed. If the limit is reached, the oldest inactive image will be replaced. If all 5 are active, an error will be returned.
-
-- **Authentication:** Required (JWT Bearer Token)
-  - `200 OK`: `UserImageResponseDto` - Image uploaded successfully.
-  - `400 Bad Request`: Invalid image (e.g., unsupported format, size exceeds limit, corrupted file), limit reached, or other issues.
-
-#### `GET /user/profile-images`
-
-Retrieves a list of all profile images for the authenticated user.
-
-- **Authentication:** Required (JWT Bearer Token)
-- **Responses:**
-  - `200 OK`: `list[UserImageResponseDto]` - List of user's profile images.
-
-#### `GET /user/profile-images/{image_id}/data`
-
-Retrieves the actual image data for a specific profile image belonging to the authenticated user.
-
-- **Authentication:** Required (JWT Bearer Token)
-- **Path Parameters:**
-  - `image_id`: UUID of the profile image.
-- **Responses:**
-  - `200 OK`: Image data (e.g., `image/jpeg`).
-  - `404 Not Found`: Image not found or does not belong to the user.
-
-#### `DELETE /user/profile-images/{image_id}`
-Deletes a specific profile image for the authenticated user. Cannot delete the last active image if it's the only one.
-
-- **Authentication:** Required (JWT Bearer Token)
-- **Path Parameters:**
-  - `image_id`: UUID of the profile image to delete.
-- **Responses:**
-  - `200 OK`: `{"detail": "Image deleted successfully."}`
-  - `400 Bad Request`: Cannot delete last active image, or other issues.
-
-#### `PUT /user/profile-images/{image_id}/set-active`
-Sets a specific profile image as the active one for the authenticated user.
-
-- **Authentication:** Required (JWT Bearer Token)
-- **Path Parameters:**
-  - `image_id`: UUID of the profile image to set as active.
-- **Responses:**
-  - `200 OK`: `UserImageResponseDto` - Image set as active successfully.
-  - `400 Bad Request`: Image not found or does not belong to the user.
-
-#### `GET /user/me`
-
-Retrieves the authenticated user's profile information.
-
-- **Authentication:** Required (JWT Bearer Token)
-- **Responses:**
-  - `200 OK`: See UserResponseDto schema below - User profile data, including `account_confirmed`, `bio`, `active_avatar_url`, and `public_key`.
-  - `404 Not Found`: User not found.
-
-#### `PUT /user/me/bio`
-
-Allows the authenticated user to update their own bio.
-
-- **Authentication:** Required (JWT Bearer Token)
-- **Request Body:**
-  ```json
-  {
-    "bio": "string"
-  }
-  ```
-- **Responses:**
-  - `200 OK`: See UserResponseDto schema below - User bio updated successfully.
-  - `400 Bad Request`: Invalid input.
-
-#### `PUT /user/public-key`
-
-Updates the authenticated user's public key.
-
-- **Authentication:** Required (JWT Bearer Token)
-- **Request Body:**
-  ```json
-  {
-    "public_key": "string"
-  }
-  ```
-- **Responses:**
-  - `200 OK`: `{"detail": "Public key updated successfully."}`
-  - `400 Bad Request`: Invalid input or user not found.
-
-#### `GET /user/public-key/{user_id}`
-
-Retrieves another user's public key.
-
-- **Authentication:** Required (JWT Bearer Token)
-- **Path Parameters:**
-  - `user_id`: UUID of the user whose public key to retrieve.
-- **Responses:**
-  - `200 OK`: `{"public_key": "string"}` - Public key retrieved successfully.
-  - `404 Not Found`: Public key not found for this user.
-  - `400 Bad Request`: Invalid input.
-
-#### `DELETE /user/delete`
-
-Deletes the authenticated user's account.
-
-- **Authentication:** Required (JWT Bearer Token)
-- **Responses:**
-  - `200 OK`: `{"detail": "User deleted"}` - User account deleted successfully.
-  - `400 Bad Request`: User not found or other issues.
-
-### Admin User Management
-
-#### `GET /user/all`
-
-Retrieves a list of all users (Admin only).
-
-- **Authentication:** Required (Admin JWT Bearer Token)
-- **Responses:**
-  - `200 OK`: `list[UserResponseAdminListDto]` - List of all user profiles.
-  - `401 Unauthorized`: Missing or invalid token.
-  - `403 Forbidden`: Admin privileges required.
-
-#### `GET /user/{user_id}`
-
-Retrieves a user's profile information by ID.
-
-- **Authentication:** Required (JWT Bearer Token)
-- **Path Parameters:**
-  - `user_id`: UUID of the user to retrieve.
-- **Responses:**
-  - `200 OK`: `UserResponseDto` - User profile data, including `account_confirmed` status.
-  - `404 Not Found`: User not found.
-
-#### `GET /user/admin/users/{user_id}/profile-images`
-
-Retrieves a list of all profile images for a specific user (Admin only).
-
-- **Authentication:** Required (Admin JWT Bearer Token)
-- **Path Parameters:**
-  - `user_id`: UUID of the user.
-- **Responses:**
-  - `200 OK`: `list[UserImageResponseDto]` - List of user's profile images.
-  - `401 Unauthorized`: Missing or invalid token.
-  - `403 Forbidden`: Admin privileges required.
-
-#### `GET /user/admin/users/{user_id}/profile-images/{image_id}/data`
-
-Retrieves the actual image data for a specific profile image belonging to any user (Admin only).
-
-- **Authentication:** Required (Admin JWT Bearer Token)
-- **Path Parameters:**
-  - `user_id`: UUID of the user.
-  - `image_id`: UUID of the profile image.
-- **Responses:**
-  - `200 OK`: Image data (e.g., `image/jpeg`).
-  - `404 Not Found`: Image not found or does not belong to the user.
-  - `401 Unauthorized`: Missing or invalid token.
-  - `403 Forbidden`: Admin privileges required.
-
-#### `PUT /user/admin/edit`
-
-Allows an admin to edit a user's information, including their role, account confirmation, and bio.
-
-- **Authentication:** Required (Admin JWT Bearer Token)
-- **Path Parameters:**
-  - `user_id`: UUID of the user to edit.
-- **Request Body (multipart/form-data):**
-  - `role`: "admin" | "user" (optional)
-  - `account_confirmed`: true | false (optional)
-  - `bio`: string (optional) - The new bio content. Can be empty to clear the bio.
-- **Optional File:** `file` (type: file) - New profile picture for the user. If provided, it will be uploaded and set as the active profile picture.
-- **Responses:**
-  - `200 OK`: `UserResponseAdminDto` - User updated successfully.
-  - `404 Not Found`: User not found.
-  - `400 Bad Request`: Invalid input.
-
-#### `DELETE /user/admin/delete/{user_id}`
-
-Allows an admin to delete any user's account.
-
-- **Authentication:** Required (Admin JWT Bearer Token)
-- **Path Parameters:**
-  - `user_id`: UUID of the user to delete.
-- **Responses:**
-  - `200 OK`: `{"detail": "User deleted by admin"}` - User account deleted successfully.
-  - `400 Bad Request`: User not found or other issues.
-
-### Password Management
-
-#### `POST /user/request-password-reset`
-
-Requests a password reset email for the given email address.
-
-- **Authentication:** None
-- **Request Body:**
-  ```json
-  {
-    "email": "user@example.com"
-  }
-  ```
-- **Responses:**
-  - `200 OK`: `{"detail": "Password reset email sent if user exists."}`
-  - `400 Bad Request`: Invalid email format.
-
-#### `POST /user/reset-password`
-
-Resets the user's password using a valid reset token.
-
-- **Authentication:** None
-- **Request Body:**
-  ```json
-  {
-    "token": "string",
-    "new_password": "string",
-    "confirm_password": "string"
-  }
-  ```
-- **Responses:**
-  - `200 OK`: `{"detail": "Password has been reset successfully."}`
-  - `400 Bad Request`: Invalid token, passwords do not match, or user not found.
-
-#### `GET /user/confirm-account`
-
-Confirms a user's account using a valid confirmation token.
-
-- **Authentication:** None
-- **Query Parameters:**
-  - `token`: string - The account confirmation token.
-- **Responses:**
-  - `200 OK`: `{"detail": "Account confirmed successfully."}`
-  - `400 Bad Request`: Invalid or expired token, or user not found.
-
-## WebSocket
-
-### `GET /ws`
-
-Establishes a WebSocket connection for real-time messaging.
-
-- **Authentication:** Required (JWT Bearer Token passed as a query parameter `token`).
-- **Query Parameters:**
-  - `token`: string - The JWT Bearer token for authentication.
-- **Messages (JSON format):**
-  - **Sending (Client to Server):**
-    ```json
-    {
-      "sender_id": "UUID",
-      "receiver_id": "UUID" | null,  // For private messages
-      "group_id": "UUID" | null,     // For group messages
-      "content": "string",           // Message content (encrypted if is_encrypted is true)
-      "is_encrypted": "boolean"      // True if content is end-to-end encrypted
-    }
-    ```
-    **Note:** Either `receiver_id` or `group_id` must be provided, but not both.
-  - **Receiving (Server to Client):**
-    Messages received will be in the `Message` DTO format.
-    ```json
-    {
-      "id": "UUID",
-      "sender_id": "UUID",
-      "receiver_id": "UUID" | null,
-      "group_id": "UUID" | null,
-      "conversation_id": "UUID" | null,
-      "content": "string",
-      "is_encrypted": "boolean",
-      "created_at": "datetime"
-    }
-    ```
-- **Connection Lifecycle:**
-  - Client connects to `ws://your-backend-url/ws?token=<YOUR_JWT_TOKEN>`.
-  - Server validates the token.
-  - On successful connection, the client can send and receive messages.
-  - Connection closes on `WebSocketDisconnect` or errors.
-
-## Messaging and Conversations
-
-For details on how to implement End-to-End Encryption on the frontend, please refer to the [Frontend E2E Messaging Guide](Frontend_E2E_Messaging_Guide.md).
-
-### Conversations
-
-#### `POST /conversations/`
-
-Creates a new private conversation between two users or retrieves an existing one.
-
-- **Authentication:** Required (JWT Bearer Token)
-- **Request Body:**
-  ```json
-  {
-    "user1_id": "UUID",
-    "user2_id": "UUID"
-  }
-  ```
-- **Responses:**
-  - `200 OK`: `ConversationResponseDto` - The created or retrieved conversation.
-  - `403 Forbidden`: If the current user is not one of the participants.
-  - `400 Bad Request`: Invalid input.
-
-#### `GET /conversations/my`
-
-Retrieves all conversations the authenticated user is part of.
-
-- **Authentication:** Required (JWT Bearer Token)
-- **Responses:**
-  - `200 OK`: `List[ConversationResponseDto]` - A list of conversations.
-
-### Messages
-
-#### `POST /messages/send`
-
-Sends a new message. This endpoint handles both private (direct) and group messages.
-
-- **Authentication:** Required (JWT Bearer Token)
-- **Request Body:**
-  ```json
-  {
-    "sender_id": "UUID",
-    "receiver_id": "UUID" | null,  // Required for private messages
-    "group_id": "UUID" | null,     // Required for group messages
-    "content": "string",
-    "is_encrypted": "boolean"      // True if content is end-to-end encrypted
-  }
-  ```
-  **Note:** Either `receiver_id` or `group_id` must be provided, but not both.
-- **Responses:**
-  - `200 OK`: `Message` - The sent message.
-  - `400 Bad Request`: Invalid input (e.g., both `receiver_id` and `group_id` provided, or neither).
-  - `403 Forbidden`: If the sender_id does not match the current authenticated user.
-
-#### `GET /messages/conversation/{conversation_id}`
-
-Retrieves messages for a specific private conversation.
-
-- **Authentication:** Required (JWT Bearer Token)
-- **Path Parameters:**
-  - `conversation_id`: UUID of the conversation.
-- **Responses:**
-  - `200 OK`: `List[Message]` - A list of messages in the conversation.
-  - `403 Forbidden`: If the current user is not part of the conversation.
-
-#### `GET /messages/group/{group_id}`
-
-Retrieves messages for a specific group.
-
-- **Authentication:** Required (JWT Bearer Token)
-- **Path Parameters:**
-  - `group_id`: UUID of the group.
-- **Responses:**
-  - `200 OK`: `List[Message]` - A list of messages in the group.
-  - `403 Forbidden`: If the current user is not a member of the group.
-
-# DTO Schemas
-
-## UserResponseDto
-
+#### UserResponseDto
 ```json
 {
-  "id": "UUID",
+  "id": "uuid",
   "username": "string",
   "email": "string",
-  "account_confirmed": true,
-  "active_avatar_url": "string",
-  "public_key": "string",
-  "bio": "string",
+  "account_confirmed": "boolean",
+  "active_avatar_url": "string|null",
+  "public_key": "string|null",
+  "bio": "string|null",
   "created_at": "datetime"
 }
 ```
 
-## UserResponseAdminDto
-
+#### UserResponseAdminDto
 ```json
 {
-  "id": "UUID",
+  "id": "uuid",
   "username": "string",
   "email": "string",
-  "account_confirmed": true,
-  "active_avatar_url": "string",
-  "public_key": "string",
-  "bio": "string",
+  "account_confirmed": "boolean",
+  "active_avatar_url": "string|null",
+  "public_key": "string|null",
+  "bio": "string|null",
   "created_at": "datetime",
-  "role": "admin" | "user"
+  "role": "admin|user"
 }
 ```
 
-## UserResponseAdminListDto
-
+#### UserImageResponseDto
 ```json
 {
-  "id": "UUID",
-  "username": "string",
-  "email": "string",
-  "account_confirmed": true,
-  "active_avatar_url": "string",
-  "public_key": "string",
-  "created_at": "datetime",
-  "role": "admin" | "user"
+  "id": "uuid",
+  "user_id": "uuid",
+  "image_key": "string",
+  "is_active": "boolean",
+  "created_at": "datetime"
 }
 ```
+
+#### TokenData
+```json
+{
+  "access_token": "string"
+}
+```
+
+#### Message
+```json
+{
+  "id": "uuid",
+  "sender_id": "uuid",
+  "receiver_id": "uuid|null",
+  "group_id": "uuid|null",
+  "conversation_id": "uuid|null",
+  "content": "string",
+  "is_encrypted": "boolean",
+  "created_at": "datetime"
+}
+```
+
+#### ConversationResponseDto
+```json
+{
+  "id": "uuid",
+  "user1_id": "uuid",
+  "user2_id": "uuid",
+  "created_at": "datetime"
+}
+```
+
+## User Management Endpoints
+
+### Authentication & Registration
+
+#### POST /user/register
+Register a new user account with optional profile image.
+
+**Authentication:** None required
+**Content-Type:** `multipart/form-data` (REQUIRED - do not use application/json)
+
+**Request Body (Form Data):**
+```
+username: string (required)
+email: string (required, valid email format)
+password: string (required)
+file: File (optional, image file - PNG, JPEG, etc.)
+```
+
+**Important Notes for Frontend:**
+- MUST use `multipart/form-data` content type
+- Do NOT send as JSON - this will result in 422 error
+- File parameter is optional but if provided, must be a valid image file
+- All text fields should be sent as form fields, not JSON
+
+**Response:** `UserResponseDto`
+**Status Codes:** 
+- 200 (Success)
+- 400 (Bad Request - username/email already exists, invalid file, image security error)
+- 422 (Validation Error - typically caused by using JSON instead of form data)
+- 500 (Internal Server Error)
+
+**Example using curl:**
+```bash
+# Without image
+curl -X POST "http://localhost:8000/user/register" \
+  -F "username=johndoe" \
+  -F "email=john@example.com" \
+  -F "password=securepassword123"
+
+# With image
+curl -X POST "http://localhost:8000/user/register" \
+  -F "username=johndoe" \
+  -F "email=john@example.com" \
+  -F "password=securepassword123" \
+  -F "file=@profile.jpg"
+```
+
+**Example using JavaScript fetch:**
+```javascript
+// Registration without image
+const formData = new FormData();
+formData.append('username', 'johndoe');
+formData.append('email', 'john@example.com');
+formData.append('password', 'securepassword123');
+
+const response = await fetch('/user/register', {
+  method: 'POST',
+  body: formData  // Do NOT set Content-Type header, let browser set it
+});
+
+// Registration with image
+const formData = new FormData();
+formData.append('username', 'johndoe');
+formData.append('email', 'john@example.com');
+formData.append('password', 'securepassword123');
+formData.append('file', imageFile); // imageFile is a File object from input[type="file"]
+
+const response = await fetch('/user/register', {
+  method: 'POST',
+  body: formData
+});
+```
+
+#### POST /user/login
+Authenticate a user and return a JWT token.
+
+**Authentication:** None required
+**Content-Type:** `application/json`
+
+**Request Body:**
+```json
+{
+  "username": "string", // Can be username or email
+  "password": "string"
+}
+```
+
+**Response:** `TokenData`
+**Status Codes:** 
+- 200 (Success)
+- 401 (Unauthorized - invalid credentials)
+
+**Example:**
+```bash
+curl -X POST "http://localhost:8000/user/login" \
+  -H "Content-Type: application/json" \
+  -d '{"username": "johndoe", "password": "securepassword123"}'
+```
+
+### User Profile Management
+
+#### GET /user/me
+Get the current authenticated user's profile information.
+
+**Authentication:** Required
+**Response:** `UserResponseDto`
+**Status Codes:** 
+- 200 (Success)
+- 404 (Not Found)
+
+**Example:**
+```bash
+curl -X GET "http://localhost:8000/user/me" \
+  -H "Authorization: Bearer <your_jwt_token>"
+```
+
+#### PUT /user/me/bio
+Update the current user's bio.
+
+**Authentication:** Required
+**Content-Type:** `multipart/form-data`
+
+**Request Body:**
+```
+bio: string (optional, can be empty to clear bio)
+```
+
+**Response:** `UserResponseDto`
+**Status Codes:** 
+- 200 (Success)
+- 400 (Bad Request)
+
+#### DELETE /user/delete
+Delete the current authenticated user's account.
+
+**Authentication:** Required
+**Response:** `{"detail": "User deleted"}`
+**Status Codes:** 
+- 200 (Success)
+- 400 (Bad Request)
+
+### User Search & Discovery
+
+#### GET /user/search
+Search for a user by username.
+
+**Authentication:** Required
+**Query Parameters:**
+- `username`: string (required)
+
+**Response:** `UserResponseDto`
+**Status Codes:** 
+- 200 (Success)
+- 404 (Not Found)
+
+**Example:**
+```bash
+curl -X GET "http://localhost:8000/user/search?username=johndoe" \
+  -H "Authorization: Bearer <your_jwt_token>"
+```
+
+#### GET /user/{user_id}
+Get user information by user ID.
+
+**Authentication:** Required
+**Path Parameters:**
+- `user_id`: UUID (required)
+
+**Response:** `UserResponseDto`
+**Status Codes:** 
+- 200 (Success)
+- 404 (Not Found)
+
+### Profile Image Management
+
+#### POST /user/profile-images
+Upload a new profile image (max 5 images per user).
+
+**Authentication:** Required
+**Content-Type:** `multipart/form-data`
+
+**Request Body:**
+```
+file: UploadFile (required, image file)
+```
+
+**Response:** `UserImageResponseDto`
+**Status Codes:** 
+- 200 (Success)
+- 400 (Bad Request - invalid image, limit reached)
+
+**Notes:**
+- Maximum 5 profile images per user
+- First image is automatically set as active
+- If 5 images exist, oldest inactive image is replaced
+
+#### GET /user/profile-images
+Get all profile images for the current user.
+
+**Authentication:** Required
+**Response:** `list[UserImageResponseDto]`
+**Status Codes:** 
+- 200 (Success)
+- 400 (Bad Request)
+
+#### GET /user/profile-images/{image_id}/data
+Get the actual image data for a specific profile image.
+
+**Authentication:** Required
+**Path Parameters:**
+- `image_id`: UUID (required)
+
+**Response:** Image data (JPEG format)
+**Content-Type:** `image/jpeg`
+**Status Codes:** 
+- 200 (Success)
+- 404 (Not Found)
+
+#### PUT /user/profile-images/{image_id}/set-active
+Set a specific profile image as active.
+
+**Authentication:** Required
+**Path Parameters:**
+- `image_id`: UUID (required)
+
+**Response:** `UserImageResponseDto`
+**Status Codes:** 
+- 200 (Success)
+- 400 (Bad Request)
+
+#### DELETE /user/profile-images/{image_id}
+Delete a specific profile image.
+
+**Authentication:** Required
+**Path Parameters:**
+- `image_id`: UUID (required)
+
+**Response:** `{"detail": "Image deleted successfully."}`
+**Status Codes:** 
+- 200 (Success)
+- 400 (Bad Request)
+
+**Notes:**
+- Cannot delete the last active profile picture
+- If deleted image was active, another image is automatically set as active
+
+### Encryption & Security
+
+#### PUT /user/public-key
+Update the user's public key for end-to-end encryption.
+
+**Authentication:** Required
+**Content-Type:** `application/json`
+
+**Request Body:**
+```json
+{
+  "public_key": "string"
+}
+```
+
+**Response:** `{"detail": "Public key updated successfully."}`
+**Status Codes:** 
+- 200 (Success)
+- 400 (Bad Request)
+
+#### GET /user/public-key/{user_id}
+Get a user's public key for encryption purposes.
+
+**Authentication:** Required
+**Path Parameters:**
+- `user_id`: string (required)
+
+**Response:** 
+```json
+{
+  "public_key": "string|null",
+  "message": "string (optional - when key is not set up)"
+}
+```
+**Status Codes:** 
+- 200 (Success - returns key or null if not set up)
+- 404 (User not found)
+- 400 (Bad Request)
+
+#### PUT /user/private-key-backup
+Store encrypted private key backup.
+
+**Authentication:** Required
+**Content-Type:** `application/json`
+
+**Request Body:**
+```json
+{
+  "encrypted_private_key": "string",
+  "salt": "string",
+  "iv": "string",
+  "password": "string"
+}
+```
+
+**Response:** `{"detail": "Encrypted private key backup stored successfully."}`
+**Status Codes:** 
+- 200 (Success)
+- 400 (Bad Request)
+
+**Note:** The `password_hash` field should contain the hash of the password used to encrypt the private key. This hash will be stored for verification during recovery.
+
+#### POST /user/private-key-backup
+Retrieve encrypted private key backup after password verification.
+
+**Authentication:** Required
+**Content-Type:** `application/json`
+
+**Request Body:**
+```json
+{
+  "password": "string"
+}
+```
+
+**Response:**
+```json
+{
+  "encrypted_private_key": "string",
+  "salt": "string",
+  "iv": "string"
+}
+```
+**OR if no backup exists:**
+```json
+{
+  "message": "No private key backup found. Please create a backup first.",
+  "backup_exists": false
+}
+```
+**Status Codes:** 
+- 200 (Success - backup found or informative message if no backup)
+- 401 (Unauthorized - Invalid password)
+- 404 (User not found)
+- 400 (Bad Request)
+
+**Note:** The password provided must match the original password used for encryption. The server verifies the password hash but never decrypts the private key - decryption is handled client-side for security.
+
+#### GET /user/crypto-setup-status
+Check the cryptographic setup status for the authenticated user.
+
+**Authentication:** Required
+
+**Response:**
+```json
+{
+  "has_public_key": "boolean",
+  "has_private_key_backup": "boolean", 
+  "setup_complete": "boolean",
+  "next_steps": ["array of helpful setup instructions"]
+}
+```
+**Status Codes:** 
+- 200 (Success)
+- 400 (Bad Request)
+
+**Note:** This endpoint helps frontends determine what cryptographic setup steps are still needed without requiring passwords.
+
+### Password Management
+
+#### POST /user/request-password-reset
+Request a password reset email.
+
+**Authentication:** None required
+**Content-Type:** `multipart/form-data` (REQUIRED - do not use application/json)
+
+**Request Body (Form Data):**
+```
+email: string (required, valid email format)
+```
+
+**Response:** `{"detail": "Password reset email sent if user exists."}`
+**Status Codes:** 
+- 200 (Success)
+- 400 (Bad Request)
+- 422 (Validation Error - typically caused by using JSON instead of form data)
+
+**Notes:**
+- For security, always returns success message regardless of email existence
+- MUST use form data, not JSON
+
+**Example using curl:**
+```bash
+curl -X POST "http://localhost:8000/user/request-password-reset" \
+  -F "email=user@example.com"
+```
+
+**Example using JavaScript:**
+```javascript
+const formData = new FormData();
+formData.append('email', 'user@example.com');
+
+const response = await fetch('/user/request-password-reset', {
+  method: 'POST',
+  body: formData
+});
+```
+
+#### POST /user/reset-password
+Reset password using a reset token.
+
+**Authentication:** None required
+**Content-Type:** `multipart/form-data` (REQUIRED - do not use application/json)
+
+**Request Body (Form Data):**
+```
+token: string (required)
+new_password: string (required)
+confirm_password: string (required)
+```
+
+**Response:** `{"detail": "Password has been reset successfully."}`
+**Status Codes:** 
+- 200 (Success)
+- 400 (Bad Request - invalid token, passwords don't match)
+- 422 (Validation Error - typically caused by using JSON instead of form data)
+
+**Example using curl:**
+```bash
+curl -X POST "http://localhost:8000/user/reset-password" \
+  -F "token=reset_token_here" \
+  -F "new_password=newpassword123" \
+  -F "confirm_password=newpassword123"
+```
+
+**Example using JavaScript:**
+```javascript
+const formData = new FormData();
+formData.append('token', resetToken);
+formData.append('new_password', 'newpassword123');
+formData.append('confirm_password', 'newpassword123');
+
+const response = await fetch('/user/reset-password', {
+  method: 'POST',
+  body: formData
+});
+```
+
+### Account Confirmation
+
+#### GET /user/confirm-account
+Confirm user account using confirmation token.
+
+**Authentication:** None required
+**Query Parameters:**
+- `token`: string (required)
+
+**Response:** `{"detail": "Account confirmed successfully."}`
+**Status Codes:** 
+- 200 (Success)
+- 400 (Bad Request)
+
+**Example:**
+```bash
+curl -X GET "http://localhost:8000/user/confirm-account?token=<confirmation_token>"
+```
+
+## Administrative Endpoints
+
+### User Management (Admin Only)
+
+#### GET /user/all
+Get all users in the system.
+
+**Authentication:** Admin required
+**Response:** `list[UserResponseAdminListDto]`
+**Status Codes:** 
+- 200 (Success)
+- 401 (Unauthorized)
+- 403 (Forbidden)
+
+#### GET /user/{user_id} (Admin)
+Get detailed user information by ID (admin view).
+
+**Authentication:** Admin required
+**Path Parameters:**
+- `user_id`: string (required)
+
+**Response:** `UserResponseAdminDto`
+**Status Codes:** 
+- 200 (Success)
+- 404 (Not Found)
+- 401 (Unauthorized)
+- 403 (Forbidden)
+
+#### PUT /user/admin/edit
+Edit user information as admin.
+
+**Authentication:** Admin required
+**Content-Type:** `multipart/form-data`
+
+**Request Body:**
+```
+user_id: string (required)
+role: string (optional, "admin" or "user")
+account_confirmed: boolean (optional)
+bio: string (optional)
+file: UploadFile (optional, profile image)
+```
+
+**Response:** `UserResponseAdminDto`
+**Status Codes:** 
+- 200 (Success)
+- 404 (Not Found)
+- 401 (Unauthorized)
+- 403 (Forbidden)
+
+#### DELETE /user/admin/delete/{user_id}
+Delete a user account as admin.
+
+**Authentication:** Admin required
+**Path Parameters:**
+- `user_id`: string (required)
+
+**Response:** `{"detail": "User deleted by admin"}`
+**Status Codes:** 
+- 200 (Success)
+- 400 (Bad Request)
+- 401 (Unauthorized)
+- 403 (Forbidden)
+
+### Admin Profile Image Management
+
+#### GET /user/admin/users/{user_id}/profile-images
+Get all profile images for a specific user (admin only).
+
+**Authentication:** Admin required
+**Path Parameters:**
+- `user_id`: UUID (required)
+
+**Response:** `list[UserImageResponseDto]`
+**Status Codes:** 
+- 200 (Success)
+- 404 (Not Found)
+- 401 (Unauthorized)
+- 403 (Forbidden)
+
+#### GET /user/admin/users/{user_id}/profile-images/{image_id}/data
+Get image data for a specific user's profile image (admin only).
+
+**Authentication:** Admin required
+**Path Parameters:**
+- `user_id`: UUID (required)
+- `image_id`: UUID (required)
+
+**Response:** Image data (JPEG format)
+**Content-Type:** `image/jpeg`
+**Status Codes:** 
+- 200 (Success)
+- 404 (Not Found)
+- 401 (Unauthorized)
+- 403 (Forbidden)
+
+## Messaging Endpoints
+
+### Conversations
+
+#### POST /conversations/
+Create a new private conversation or retrieve existing one.
+
+**Authentication:** Required
+**Content-Type:** `application/json`
+
+**Request Body:**
+```json
+{
+  "user1_id": "uuid",
+  "user2_id": "uuid"
+}
+```
+
+**Response:** `ConversationResponseDto`
+**Status Codes:** 
+- 200 (Success)
+- 400 (Bad Request)
+- 403 (Forbidden - user not participant)
+
+#### GET /conversations/my
+Get all conversations for the current user.
+
+**Authentication:** Required
+**Response:** `list[ConversationResponseDto]`
+**Status Codes:** 
+- 200 (Success)
+
+### Messages
+
+#### POST /messages/send
+Send a new message (private or group).
+
+**Authentication:** Required
+**Content-Type:** `application/json`
+
+**Request Body:**
+```json
+{
+  "sender_id": "uuid",
+  "receiver_id": "uuid|null",  // For private messages
+  "group_id": "uuid|null",     // For group messages
+  "content": "string",
+  "is_encrypted": "boolean"
+}
+```
+
+**Note:** Either `receiver_id` or `group_id` must be provided, but not both.
+
+**Response:** `Message`
+**Status Codes:** 
+- 200 (Success)
+- 400 (Bad Request)
+- 403 (Forbidden - sender mismatch)
+
+#### GET /messages/conversation/{conversation_id}
+Get messages for a specific conversation.
+
+**Authentication:** Required
+**Path Parameters:**
+- `conversation_id`: UUID (required)
+
+**Response:** `list[Message]`
+**Status Codes:** 
+- 200 (Success)
+- 403 (Forbidden - not conversation participant)
+
+#### GET /messages/group/{group_id}
+Get messages for a specific group.
+
+**Authentication:** Required
+**Path Parameters:**
+- `group_id`: UUID (required)
+
+**Response:** `list[Message]`
+**Status Codes:** 
+- 200 (Success)
+- 403 (Forbidden - not group member)
+
+## WebSocket Endpoints
+
+### GET /ws
+Establish WebSocket connection for real-time messaging.
+
+**Authentication:** Required (JWT token as query parameter)
+**Query Parameters:**
+- `token`: string (required - JWT Bearer token)
+
+**Connection URL:**
+```
+ws://localhost:8000/ws?token=<your_jwt_token>
+```
+
+**Message Format (Client to Server):**
+```json
+{
+  "sender_id": "uuid",
+  "receiver_id": "uuid|null",
+  "group_id": "uuid|null",
+  "content": "string",
+  "is_encrypted": "boolean"
+}
+```
+
+**Message Format (Server to Client):**
+```json
+{
+  "id": "uuid",
+  "sender_id": "uuid",
+  "receiver_id": "uuid|null",
+  "group_id": "uuid|null",
+  "conversation_id": "uuid|null",
+  "content": "string",
+  "is_encrypted": "boolean",
+  "created_at": "datetime"
+}
+```
+
+## Error Responses
+
+All endpoints may return the following error responses:
+
+### 400 Bad Request
+```json
+{
+  "detail": "Error message describing what went wrong"
+}
+```
+
+### 401 Unauthorized
+```json
+{
+  "detail": "Not authenticated"
+}
+```
+
+### 403 Forbidden
+```json
+{
+  "detail": "Not enough permissions"
+}
+```
+
+### 404 Not Found
+```json
+{
+  "detail": "Resource not found"
+}
+```
+
+### 422 Validation Error
+```json
+{
+  "detail": [
+    {
+      "loc": ["field_name"],
+      "msg": "Error message",
+      "type": "error_type"
+    }
+  ]
+}
+```
+
+## Security Considerations
+
+### Password Security
+- Passwords are hashed using bcrypt
+- Minimum password requirements should be enforced on frontend
+- Password reset tokens are time-limited and single-use
+
+### Image Security
+- Images are processed and validated before storage
+- Only JPEG format is supported for output
+- Images are stored in AWS S3 with secure access patterns
+- Maximum file size limits should be enforced
+
+### JWT Tokens
+- Tokens have configurable expiration periods
+- Account confirmation and password reset use separate token types
+- Tokens are signed with HS256 algorithm
+- Different secrets for different token types
+
+### End-to-End Encryption
+- Users can store public keys for message encryption
+- Private key backups are encrypted client-side before storage
+- Backup includes salt and IV for proper decryption
+- Password used for encryption is hashed and stored for verification during recovery
+- Server never has access to unencrypted private keys or encryption passwords
+- Password verification ensures only authorized users can retrieve their backups
+- Decryption is performed entirely on the client side for maximum security
+
+### Input Validation
+- All user inputs are validated using Pydantic models
+- File uploads are scanned for security threats
+- SQL injection protection through ORM usage
+
+## Rate Limiting
+Currently, no rate limiting is implemented, but it may be added in future versions for:
+- Login attempts
+- Password reset requests
+- Image uploads
+- Message sending
+
+## CORS
+Cross-Origin Resource Sharing (CORS) is enabled for development. In production, specific origins should be configured.
+
+## Environment Configuration
+
+Key configuration variables:
+- `JWT_EXPIRATION_PERIOD`: Token expiration time (e.g., "24h", "30m")
+- `JWT_SECRET_KEY`: Secret key for JWT signing
+- `JWT_ACCOUNT_CONFIRMATION`: Secret key for confirmation tokens
+- `DEBUG`: Enable/disable debug mode
+- AWS S3 configuration for image storage
+- Email service configuration for notifications
+
+## Additional Documentation
+
+For detailed implementation guides, see:
+- [Frontend E2E Messaging Guide](Frontend_E2E_Messaging_Guide.md)
+- [Secure Private Key Backup and Recovery](Secure_Private_Key_Backup_and_Recovery.md)
+
+## Testing
+
+Use tools like:
+- `curl` for command-line testing
+- Postman for interactive API testing
+- WebSocket test clients for real-time functionality
+
+## Support
+
+For technical support or questions about the API, please contact the development team or refer to the source code documentation.

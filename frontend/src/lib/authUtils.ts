@@ -1,5 +1,6 @@
 import { jwtDecode } from 'jwt-decode';
-import { DecodedToken } from '@/types/auth';
+import { DecodedToken } from '../types/auth.types';
+import { keyStorage } from './keyStorage';
 
 const TOKEN_KEY = "jwt_token";
 const LOGIN_PASSWORD_KEY = "temp_login_password";
@@ -48,5 +49,22 @@ export const authUtils = {
 
   removeTempLoginPassword: () => {
     localStorage.removeItem(LOGIN_PASSWORD_KEY);
+  },
+
+  // Check if user has both public and private keys set up
+  hasKeysSetup: async (userId: string, userPublicKey?: string | null): Promise<boolean> => {
+    try {
+      // Check if user has public key
+      if (!userPublicKey) {
+        return false;
+      }
+      
+      // Check if user has private key stored locally
+      const privateKey = await keyStorage.getPrivateKey(userId);
+      return !!privateKey;
+    } catch (error) {
+      console.error("Error checking key setup:", error);
+      return false;
+    }
   },
 };

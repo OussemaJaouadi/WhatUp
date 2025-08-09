@@ -1,12 +1,11 @@
-from fastapi import APIRouter, Depends, HTTPException, status, Request
-from sqlalchemy.ext.asyncio import AsyncSession
+from fastapi import APIRouter, HTTPException, status, Request
 from typing import List
 from uuid import UUID
 
-from core.database import AsyncSessionLocal
+
 from services.conversation_service import ConversationService
 from dto.conversation import ConversationResponseDto, ConversationCreate
-from dto.message import Message
+
 from models.user import User
 from utils.decorators import requires_auth
 

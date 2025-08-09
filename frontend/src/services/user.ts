@@ -1,4 +1,4 @@
-import { UserResponseAdminDto } from '@/types/user';
+import { UserResponseAdminDto } from '../types/user.types';
 import { api } from './api';
 
 export const userService = {
